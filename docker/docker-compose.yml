@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  # The OpenTelemetry Collector (The Router)
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4318:4318" # OTLP HTTP receiver port
+      - "8889:8889" # MUST EXPOSE THIS: Prometheus metrics port
+
+  # Jaeger (For Traces)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # Jaeger UI
+
+  # Prometheus (For Metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # THIS IS THE MISSING LINK
+    ports:
+      - "9090:9090" # Prometheus UI
