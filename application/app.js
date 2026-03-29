@@ -1,6 +1,6 @@
 import express from 'express';
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // A normal, healthy endpoint
 app.get('/health', (req, res) => {

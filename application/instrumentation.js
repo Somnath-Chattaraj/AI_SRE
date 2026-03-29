@@ -3,7 +3,6 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 
-// Configure where to send the data (The OTel Collector running in Docker)
 const traceExporter = new OTLPTraceExporter({
     url: 'http://127.0.0.1:4318/v1/traces'
 });
@@ -24,6 +23,7 @@ const sdk = new NodeSDK({
 try {
     sdk.start();
     console.log('Telemetry initialized');
+    await import('./app.js');
 } catch (error) {
     console.log('Error initializing telemetry', error);
 }
