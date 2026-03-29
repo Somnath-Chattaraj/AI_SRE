@@ -5,8 +5,11 @@ from langchain_text_splitters import Language
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # 1. Set your Gemini API Key 
-os.environ["GOOGLE_API_KEY"] = ""
+os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
 
 print("📂 Loading source code from /src directory...")
 
