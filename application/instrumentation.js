@@ -23,7 +23,7 @@ const sdk = new NodeSDK({
 try {
     sdk.start();
     console.log('Telemetry initialized');
-    await import('./app.js');
+    await import('./src/server.js');
 } catch (error) {
     console.log('Error initializing telemetry', error);
 }

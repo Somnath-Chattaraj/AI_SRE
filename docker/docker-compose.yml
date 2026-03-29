@@ -23,3 +23,16 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml # THIS IS THE MISSING LINK
     ports:
       - "9090:9090" # Prometheus UI
+
+  # The AI Anomaly Detector
+  anomaly-detector:
+    build: ../Anomaly_Detection # Path to the folder containing your Dockerfile
+    container_name: ai-watcher
+    depends_on:
+      - prometheus # Ensure Prometheus starts first
+    volumes:
+      # This saves the incident reports from inside the container to your local machine!
+      - ../Anomaly_Detection/reports:/app/reports
+    environment:
+      # Connect directly to the Prometheus container on the internal Docker network
+      - PROMETHEUS_URL=http://prometheus:9090/api/v1/query_range
