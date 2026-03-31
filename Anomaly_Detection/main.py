@@ -90,5 +90,4 @@ def check_anomalies():
 if __name__ == "__main__":
     while True:
         check_anomalies()
-        # Sleep for 15 seconds before checking again
-        time.sleep(15)
+        time.sleep(60)
