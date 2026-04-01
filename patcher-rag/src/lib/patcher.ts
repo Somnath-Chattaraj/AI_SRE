@@ -21,27 +21,26 @@ function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
     .map((c) => `// ${c.metadata.file}:${c.metadata.line ?? "?"}\n${c.content}`)
     .join("\n\n");
 
-  return `You are an SRE agent fixing production bugs. Based on the incident report, generate code fixes for multiple files if needed.
+  return `Fix the bug in the provided code based on the incident. Output ONLY the complete file contents that need changing.
 
-## Incident Report
-- ID: ${incident.incident_id}
-- Metric: ${incident.metric_analyzed}
-- Failing Service: ${incident.failing_service ?? "unknown"}
-- Suggested Action: ${incident.suggested_action ?? "none"}
+## Incident
+- ${incident.metric_analyzed}: ${incident.suggested_action ?? "Investigate and fix"}
 
-## Relevant Code Context
+## Code
 ${context}
 
-## Instructions
-1. Analyze the incident and code context
-2. Provide complete fixed code for ALL affected files
-3. Use the following format for each file:
-// File: path/to/file.js
+## Rules
+- Minimal changes only - fix the bug, nothing else
+- Preserve existing code style, naming, patterns
+- No added comments explaining the fix
+- No refactoring unrelated code
+- No TODOs or explanatory notes
+- Output format per file:
+// File: filename.js
 \`\`\`javascript
-// code here
+// complete file contents
 \`\`\`
-4. Only output valid JavaScript code that can be saved directly to a file
-5. If no fix is needed, output "// No fix required"
+- If no fix needed: "// No fix required"
 `;
 }
 
@@ -88,6 +87,7 @@ export class Patcher {
 
       const { text } = await generateText({
         model: this.provider(MODEL),
+        system: "You are a bug-fixing bot. Output only code. Never add comments, explanations, or refactor existing code. Minimal diffs only.",
         prompt,
       });
 
