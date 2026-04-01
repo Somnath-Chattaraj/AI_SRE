@@ -21,9 +21,8 @@ const REPORTS_DIR = "../Anomaly_Detection/reports";
 const PATCH_REPORT_DIR = "patcher-rag/patch_reports";
 const POLL_INTERVAL_MS = 10000;
 const PROCESSED_FILE = "patcher-rag/.processed_incidents";
-const HEALTH_CHECK_URL = "http://localhost:3000/health";
+const HEALTH_CHECK_URL = "http://localhost:6969/health";
 const PM2_SERVICE_NAME = "buggy-app";
-
 
 interface PatchReport {
   incident_id: string;
@@ -200,6 +199,7 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
   }
 }
 
+
 async function main() {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) { console.error("OPENROUTER_API_KEY not set"); process.exit(1); }
@@ -209,8 +209,7 @@ async function main() {
   const retriever = new Retriever(store);
   const patcher = new Patcher(apiKey);
   const processed = await loadProcessedIds();
-  log(`init processed=${processed.size}`);
-
+  
   while (true) {
     try {
       const reports = await readReports();

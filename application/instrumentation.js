@@ -15,7 +15,7 @@ const sdk = new NodeSDK({
   traceExporter,
   metricReader: new metrics.PeriodicExportingMetricReader({
     exporter: metricExporter,
-    exportIntervalMillis: 1000, // Export metrics every second for real-time data
+    exportIntervalMillis: 1000, 
   }),
   instrumentations: [getNodeAutoInstrumentations()],
 });

@@ -1,7 +1,7 @@
 {
-  "incident_id": "INC-20260329_065430",
-  "timestamp": "2026-04-01T16:04:53.557Z",
-  "started_at": "2026-04-01T16:04:53.557Z",
+  "incident_id": "INC-20260329_065496",
+  "timestamp": "2026-04-01T18:20:48.499Z",
+  "started_at": "2026-04-01T18:20:48.499Z",
   "metric_analyzed": "http_server_duration_milliseconds_count",
   "failing_service": "buggy-payment-service",
   "suggested_action": "Analyze source code for blocking operations or leaks.",
@@ -15,9 +15,9 @@
     }
   ],
   "health_check_passed": true,
-  "health_check_url": "http://localhost:3000/health",
+  "health_check_url": "http://localhost:6969/health",
   "reverted": false,
-  "health_check_duration_ms": 13,
-  "completed_at": "2026-04-01T16:05:10.183Z",
-  "duration_ms": 16626
+  "health_check_duration_ms": 7,
+  "completed_at": "2026-04-01T18:21:12.941Z",
+  "duration_ms": 24442
 }

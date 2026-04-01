@@ -3,7 +3,7 @@ import { causeMemoryLeak, spikeCPU } from "./utils.js";
 import { simulateDatabaseHang } from "./database.js";
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 6969;
 
 // A normal, healthy endpoint
 app.get("/health", (req, res) => {

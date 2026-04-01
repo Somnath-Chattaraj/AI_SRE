@@ -22,30 +22,38 @@ function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
     .map((c) => `// ${c.metadata.file}:${c.metadata.line ?? "?"}\n${c.content}`)
     .join("\n\n");
 
-  return `Fix the bug in the provided code based on the incident. Output ONLY the complete file contents that need changing.
+  return `You are an expert Node.js debugging assistant. Analyze the code and fix the bug described in the incident.
 
 ## Incident
-- ${incident.metric_analyzed}: ${incident.suggested_action ?? "Investigate and fix"}
+- Metric: ${incident.metric_analyzed}
+- Service: ${incident.failing_service ?? "unknown"}
+- Action: ${incident.suggested_action ?? "Fix the bug"}
 
-## Code
+## Code to Fix
 ${context}
 
-## Rules
-- Minimal changes only - fix the bug, nothing else
-- Preserve existing code style, naming, patterns
-- No added comments explaining the fix
-- No refactoring unrelated code
-- No TODOs or explanatory notes
-- Output format per file:
-// File: filename.js
+## Requirements
+- Output COMPLETE file content (all exports, imports, etc.)
+- Keep existing function signatures and variable names
+- Fix only the buggy code - minimal changes
+- If memory leak: ensure data is properly released/cleared
+- If CPU blocking: use async patterns (setTimeout, Promises, worker threads)
+- If async issue: use proper async/await or callbacks
+- Do NOT add comments, TODOs, or explanations
+
+## Output Format (STRICT)
+For each file needing changes:
+// File: utils.js
 \`\`\`javascript
-// complete file contents
+// FULL file content with fix applied
 \`\`\`
-- If no fix needed: "// No fix required"
+
+If no changes needed:
+// No fix required
 `;
 }
 
-function parsePatches(response: string): FilePatch[] {
+export function parsePatches(response: string): FilePatch[] {
   const patches: FilePatch[] = [];
   const sections = response.split(/\/\/\s*File:/);
 
@@ -59,12 +67,19 @@ function parsePatches(response: string): FilePatch[] {
 
     let code = lines.slice(1).join("\n").trim();
 
-    const codeMatch = code.match(/```(?:javascript|js)?\n([\s\S]*?)```/);
+    const codeMatch = code.match(/```(?:javascript)?\n([\s\S]*?)```/) 
+      || code.match(/```javascript([\s\S]*?)```/i)
+      || code.match(/```javascript\n([\s\S]*)```/i)
+      || code.match(/javascript\n([\s\S]*)$/i)
+      || code.match(/^javascript([\s\S]*)$/i)
+      || code.match(/^let[\s\S]*$/);
+
     if (codeMatch) {
       code = codeMatch[1]!.trim();
     }
 
     if (filePath && code) {
+      log(`Parsed patch for file: ${filePath} with code ${code}`);
       patches.push({ filePath, code });
     }
   }
@@ -90,7 +105,9 @@ export class Patcher {
 
       const startTime = Date.now();
       const id = setInterval(() => {
-        log(`LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`);
+        log(
+          `LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`,
+        );
       }, 5000);
 
       const { text } = await generateText({
@@ -99,8 +116,12 @@ export class Patcher {
       });
 
       clearInterval(id);
-      log(`LLM response received in ${Math.round((Date.now() - startTime) / 1000)}s`);
-      log(`LLM response length for incident ${incident.incident_id}: ${text?.length ?? 0} characters`);
+      log(
+        `LLM response received in ${Math.round((Date.now() - startTime) / 1000)}s`,
+      );
+      log(
+        `LLM response length for incident ${incident.incident_id}: ${text?.length ?? 0} characters`,
+      );
       log(`LLM response: ${text}`);
 
       const patches = parsePatches(text?.trim() ?? "");
