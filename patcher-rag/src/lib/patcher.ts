@@ -86,7 +86,7 @@ export class Patcher {
     try {
       const prompt = buildPrompt(incident, chunks);
 
-      log("sending prompt to LLM:", prompt);
+      log(`Generated prompt for incident ${incident.incident_id}:\n${prompt}`);
 
       const startTime = Date.now();
       const id = setInterval(() => {
@@ -100,8 +100,8 @@ export class Patcher {
 
       clearInterval(id);
       log(`LLM response received in ${Math.round((Date.now() - startTime) / 1000)}s`);
-      log("LLM response length:", text.length.toString());
-      log("LLM response:", text);
+      log(`LLM response length for incident ${incident.incident_id}: ${text?.length ?? 0} characters`);
+      log(`LLM response: ${text}`);
 
       const patches = parsePatches(text?.trim() ?? "");
 

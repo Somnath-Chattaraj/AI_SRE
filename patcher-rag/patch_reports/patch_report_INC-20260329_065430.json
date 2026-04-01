@@ -1,0 +1,23 @@
+{
+  "incident_id": "INC-20260329_065430",
+  "timestamp": "2026-04-01T16:04:53.557Z",
+  "started_at": "2026-04-01T16:04:53.557Z",
+  "metric_analyzed": "http_server_duration_milliseconds_count",
+  "failing_service": "buggy-payment-service",
+  "suggested_action": "Analyze source code for blocking operations or leaks.",
+  "status": "completed",
+  "chunks_retrieved": 5,
+  "model_used": "nvidia/nemotron-3-nano-30b-a3b:free",
+  "patches_applied": [
+    {
+      "file": "/Users/akashdas/Developer/2_projects/AI_SRE/application/src/utils.js",
+      "success": true
+    }
+  ],
+  "health_check_passed": true,
+  "health_check_url": "http://localhost:3000/health",
+  "reverted": false,
+  "health_check_duration_ms": 13,
+  "completed_at": "2026-04-01T16:05:10.183Z",
+  "duration_ms": 16626
+}
