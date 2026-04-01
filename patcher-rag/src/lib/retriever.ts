@@ -30,7 +30,10 @@ export class Retriever {
     return parts.filter(Boolean).join(" ");
   }
 
-  async retrieve(incident: IncidentReport, nResults: number = 5): Promise<RetrievalResult> {
+  async retrieve(
+    incident: IncidentReport,
+    nResults: number = 5,
+  ): Promise<RetrievalResult> {
     const query = this.extractKeywords(incident);
     const chunks = await this.store.query(query, nResults);
     return { chunks, query };

@@ -2,6 +2,7 @@ import { generateEmbeddings } from "./lib/embedding.js";
 import { VectorStore } from "./lib/storage.js";
 import { readdir, readFile } from "fs/promises";
 import path from "path";
+import { log } from "./lib/tools.js";
 
 const DEFAULT_TARGET_DIR = "../application/src";
 
@@ -51,13 +52,16 @@ async function indexCode(options: IndexOptions = {}): Promise<void> {
       metadata: { file: relativePath, line: i * 100 },
     }));
 
+    log(`Prepared ${chunks.length} chunks from ${relativePath}`);
+    log("chunks", chunks.map((c) => c.content).join("\n---\n"));
+
     if (chunks.length > 0) {
       await store.addChunks(chunks);
       totalChunks += chunks.length;
     }
   }
 
-  console.log(`Indexed ${totalChunks} chunks from ${files.length} files`);
+  log(`Indexed ${totalChunks} chunks from ${files.length} files`);
 }
 
 const args = process.argv.slice(2);

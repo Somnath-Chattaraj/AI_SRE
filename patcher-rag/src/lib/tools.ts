@@ -105,3 +105,9 @@ export async function healthCheck(url: string, timeout: number = 5000): Promise<
     return false;
   }
 }
+
+export const log = (msg: string, id?: string) => {
+  const ts = new Date().toISOString().split("T")[1]?.split(".")[0];
+  console.log(`[${ts}] ${id ? `[${id}] ` : ""}${msg}`);
+};
+

@@ -2,6 +2,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 import type { CodeChunk } from "./storage.js";
 import type { IncidentReport } from "./retriever.js";
+import { log } from "./tools.js";
 
 export interface FilePatch {
   filePath: string;
@@ -85,29 +86,24 @@ export class Patcher {
     try {
       const prompt = buildPrompt(incident, chunks);
 
-      console.log("sending prompt to LLM:", prompt);
+      log("sending prompt to LLM:", prompt);
 
       const startTime = Date.now();
       const id = setInterval(() => {
-        console.log(`LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`);
+        log(`LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`);
       }, 5000);
 
       const { text } = await generateText({
         model: this.provider(MODEL),
-        system: "You are a bug-fixing bot. Output only code. Never add comments, explanations, or refactor existing code. Minimal diffs only.",
         prompt,
       });
 
       clearInterval(id);
-      console.log("LLM response:", text);
+      log(`LLM response received in ${Math.round((Date.now() - startTime) / 1000)}s`);
+      log("LLM response length:", text.length.toString());
+      log("LLM response:", text);
 
-      const response = text?.trim() ?? "";
-
-      if (response.includes("No fix required")) {
-        return { success: true, patches: [] };
-      }
-
-      const patches = parsePatches(response);
+      const patches = parsePatches(text?.trim() ?? "");
 
       return {
         success: true,

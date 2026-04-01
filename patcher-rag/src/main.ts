@@ -3,7 +3,7 @@ import { readdir, readFile } from "fs/promises";
 import path from "path";
 import { VectorStore } from "./lib/storage.js";
 import { Retriever, type IncidentReport } from "./lib/retriever.js";
-import { Patcher } from "./lib/patcher.js";
+import { MODEL, Patcher } from "./lib/patcher.js";
 import {
   writeFileContent,
   readFileContent,
@@ -15,6 +15,7 @@ import {
   gitLog,
   resolveAppPath,
 } from "./lib/tools.js";
+import { log } from "./lib/tools.js";
 
 const REPORTS_DIR = "../Anomaly_Detection/reports";
 const PATCH_REPORT_DIR = "patcher-rag/patch_reports";
@@ -22,6 +23,7 @@ const POLL_INTERVAL_MS = 10000;
 const PROCESSED_FILE = "patcher-rag/.processed_incidents";
 const HEALTH_CHECK_URL = "http://localhost:3000/health";
 const PM2_SERVICE_NAME = "buggy-app";
+
 
 interface PatchReport {
   incident_id: string;
@@ -43,11 +45,6 @@ interface PatchReport {
   revert_reason?: string;
   error?: string;
 }
-
-const log = (msg: string, id?: string) => {
-  const ts = new Date().toISOString().split("T")[1]?.split(".")[0];
-  console.log(`[${ts}] ${id ? `[${id}] ` : ""}${msg}`);
-};
 
 const finishReport = async (
   report: PatchReport,
@@ -118,7 +115,7 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
     suggested_action: incident.suggested_action,
     status: "processing",
     chunks_retrieved: 0,
-    model_used: "google/gemma-2-9b-it:free",
+    model_used: MODEL,
     patches_applied: [],
     health_check_passed: false,
     health_check_url: HEALTH_CHECK_URL,
@@ -127,6 +124,7 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
 
   try {
     const result = await retriever.retrieve(incident);
+
     report.chunks_retrieved = result.chunks.length;
     log(`chunks=${result.chunks.length}`, incident.incident_id);
 
@@ -149,6 +147,7 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
     }
 
     const branchName = `patch/${incident.incident_id}`;
+    
     if (!await gitEnsureBranch(branchName)) {
       await finishReport(report, "failed", processed, "Failed to create branch");
       return;
@@ -157,6 +156,7 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
     for (const patch of patchResult.patches) {
       const targetPath = resolveAppPath(patch.filePath);
       const writeSuccess = await writeFileContent(targetPath, patch.code);
+
       const entry: { file: string; success: boolean; commit_hash?: string; error?: string } = {
         file: targetPath, success: writeSuccess,
       };
