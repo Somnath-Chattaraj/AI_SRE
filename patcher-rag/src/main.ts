@@ -6,6 +6,7 @@ import { Retriever, type IncidentReport } from "./lib/retriever.js";
 import { Patcher } from "./lib/patcher.js";
 import {
   writeFileContent,
+  readFileContent,
   gitCommit,
   gitEnsureBranch,
   pm2Restart,
@@ -16,11 +17,11 @@ import {
 } from "./lib/tools.js";
 
 const REPORTS_DIR = "../Anomaly_Detection/reports";
-const PATCH_REPORT_DIR = "./patch_reports";
+const PATCH_REPORT_DIR = "patcher-rag/patch_reports";
 const POLL_INTERVAL_MS = 10000;
+const PROCESSED_FILE = "patcher-rag/.processed_incidents";
 const HEALTH_CHECK_URL = "http://localhost:3000/health";
 const PM2_SERVICE_NAME = "buggy-app";
-const PROCESSED_FILE = ".processed_incidents";
 
 interface PatchReport {
   incident_id: string;
@@ -64,7 +65,8 @@ const finishReport = async (
 
 async function loadProcessedIds(): Promise<Set<string>> {
   try {
-    return new Set(JSON.parse(await readFile(PROCESSED_FILE, "utf-8")));
+    const content = await readFileContent(PROCESSED_FILE);
+    return content ? new Set(JSON.parse(content)) : new Set();
   } catch {
     return new Set();
   }

@@ -87,12 +87,18 @@ export class Patcher {
 
       console.log("sending prompt to LLM:", prompt);
 
+      const startTime = Date.now();
+      const id = setInterval(() => {
+        console.log(`LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`);
+      }, 5000);
+
       const { text } = await generateText({
         model: this.provider(MODEL),
         system: "You are a bug-fixing bot. Output only code. Never add comments, explanations, or refactor existing code. Minimal diffs only.",
         prompt,
       });
 
+      clearInterval(id);
       console.log("LLM response:", text);
 
       const response = text?.trim() ?? "";
