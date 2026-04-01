@@ -85,11 +85,15 @@ export class Patcher {
     try {
       const prompt = buildPrompt(incident, chunks);
 
+      console.log("sending prompt to LLM:", prompt);
+
       const { text } = await generateText({
         model: this.provider(MODEL),
         system: "You are a bug-fixing bot. Output only code. Never add comments, explanations, or refactor existing code. Minimal diffs only.",
         prompt,
       });
+
+      console.log("LLM response:", text);
 
       const response = text?.trim() ?? "";
 

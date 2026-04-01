@@ -167,7 +167,8 @@ async function processIncident(incident: IncidentReport, retriever: Retriever, p
         return;
       }
 
-      const commitResult = await gitCommit(targetPath, `Fix: ${incident.incident_id}`);
+      const commitResult = await gitCommit(targetPath, `Fix: ${incident.incident_id} @ ${Date.now()}`);
+
       if (commitResult.success) {
         entry.commit_hash = commitResult.message.match(/[a-f0-9]{7}/)?.[0];
       } else {
