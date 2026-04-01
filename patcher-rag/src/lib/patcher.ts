@@ -15,7 +15,7 @@ export interface PatchResult {
   error?: string;
 }
 
-const MODEL = "nvidia/nemotron-3-nano-30b-a3b:free";
+export const MODEL = "nvidia/nemotron-3-nano-30b-a3b:free";
 
 function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
   const context = chunks
