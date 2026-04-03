@@ -65,3 +65,62 @@ export async function updatePrometheusTargets() {
   await generateTargetsFile();
   await reloadPrometheus();
 }
+
+export interface PrometheusResult {
+  metric: Record<string, string>;
+  values: [number, string][]; // [timestamp, value]
+}
+
+export interface PrometheusQueryResponse {
+  status: string;
+  data: {
+    resultType: string;
+    result: PrometheusResult[];
+  };
+}
+
+export async function fetchPrometheusMetrics(
+  serviceId: string,
+  metricName: 'probe_duration_seconds' | 'probe_success'
+): Promise<[number, number][]> {
+  const end = Math.floor(Date.now() / 1000);
+  const start = end - 150;
+  const step = 15;
+
+  const query = `${metricName}{service_id="${serviceId}"}`;
+  const url = new URL(`${PROMETHEUS_URL}/api/v1/query_range`);
+  url.searchParams.append('query', query);
+  url.searchParams.append('start', start.toString());
+  url.searchParams.append('end', end.toString());
+  url.searchParams.append('step', step.toString());
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url.toString(), {
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Prometheus responded with status ${response.status}`);
+    }
+
+    const data = (await response.json()) as PrometheusQueryResponse;
+    if (data.status !== 'success') {
+      throw new Error('Prometheus query failed');
+    }
+
+    if (!data.data.result || data.data.result.length === 0) {
+      return [];
+    }
+
+    const rawValues = data.data?.result?.[0]?.values || [];
+    return rawValues.map(([ts, val]) => [ts, parseFloat(val)] as [number, number]).slice(-10);
+  } catch (error) {
+    console.error(`[Prometheus] Error fetching ${metricName} for service ${serviceId}:`, error);
+    return [];
+  }
+}

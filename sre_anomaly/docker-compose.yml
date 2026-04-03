@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sre-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin_pwd}
+      POSTGRES_DB: ${POSTGRES_DB:-sre_anomaly}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-sre_anomaly}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sre-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: sre-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/targets:/etc/prometheus/targets
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle' # Allows hot-reloading via /-/reload
+    ports:
+      - "9090:9090"
+    depends_on:
+      - blackbox-exporter
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: sre-blackbox
+    volumes:
+      - ./prometheus/blackbox.yml:/config/blackbox.yml
+    command:
+      - '--config.file=/config/blackbox.yml'
+    ports:
+      - "9115:9115"
+
+  backend:
+    build: .
+    container_name: sre-backend
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin_pwd}@postgres:5432/${POSTGRES_DB:-sre_anomaly}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PROMETHEUS_URL=http://prometheus:9090
+      - PROMETHEUS_TARGETS_FILE=/etc/prometheus/targets/targets.json
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./prometheus/targets:/etc/prometheus/targets
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  producer:
+    build: .
+    container_name: sre-producer
+    command: ["bun", "run", "src/queue/producer.ts"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin_pwd}@postgres:5432/${POSTGRES_DB:-sre_anomaly}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PROMETHEUS_URL=http://prometheus:9090
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build: .
+    container_name: sre-worker
+    command: ["bun", "run", "src/worker/worker.ts"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin_pwd}@postgres:5432/${POSTGRES_DB:-sre_anomaly}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PROMETHEUS_URL=http://prometheus:9090
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
