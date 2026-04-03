@@ -36,3 +36,16 @@ services:
     environment:
       # Connect directly to the Prometheus container on the internal Docker network
       - PROMETHEUS_URL=http://prometheus:9090/api/v1/query_range
+
+  # The Buggy Application
+  buggy-application:
+    build: ../buggy_application
+    container_name: buggy-app
+    ports:
+      - "3000:3000"
+    environment:
+      # Send telemetry to the OpenTelemetry Collector
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+    depends_on:
+      - otel-collector
