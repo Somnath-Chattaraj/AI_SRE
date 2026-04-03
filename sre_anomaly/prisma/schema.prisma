@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  apiKey    String    @unique
+  services  Service[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Service {
+  id               String            @id @default(uuid())
+  name             String
+  url_server       String             @default("http://example.com")
+  url_codebase     String             @default("http://github.com")
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incidents        Incident[]
+  monitoringConfig MonitoringConfig?
+  anomalyLogs      AnomalyLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model MonitoringConfig {
+  id        String   @id @default(uuid())
+  serviceId String   @unique
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Incident {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnomalyLog {
+  id        String   @id @default(uuid())
+  metric    String
+  value     Float
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
