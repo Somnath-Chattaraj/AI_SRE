@@ -1,0 +1,9 @@
+{
+    "incident_id": "INC-20260402-001",
+    "timestamp": "2026-04-02T18:10:03.000Z",
+    "failing_service": "buggy-payment-service",
+    "metric_analyzed": "http_server_duration_milliseconds_count",
+    "spike_value": 21,
+    "status": "CRITICAL",
+    "suggested_action": "Analyze source code for blocking operations or leaks."
+}
