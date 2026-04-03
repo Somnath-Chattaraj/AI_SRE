@@ -21,7 +21,7 @@ export async function analyzeMetrics(
   latencySpikeDetected: boolean,
   dataPointsConfig: { durationSeconds: [number, number][], success: [number, number][] }
 ): Promise<AIAnomalyResult> {
-  const model = openrouter.chat('google/gemma-4-31b-it');
+  const model = openrouter.chat('qwen/qwen3.6-plus:free');
 
   const prompt = `
 You are an expert Site Reliability Engineer analyzing Prometheus metrics for a service.
@@ -45,7 +45,7 @@ Analyze these metrics. Provide a JSON response indicating if there's an anomaly,
       schema: anomalySchema,
       prompt,
       // Give AI maximum 15 seconds to reply
-      abortSignal: AbortSignal.timeout(15000), 
+      abortSignal: AbortSignal.timeout(15000),
     });
 
     return object;
