@@ -1,18 +1,22 @@
-FROM oven/bun:1-alpine as base
+FROM oven/bun:1 AS base
+
+# Install dependencies
+FROM base AS deps
 WORKDIR /app
-
-# Install dependancies depending on package files
-COPY package.json bun.lock ./
+COPY package.json bun.lock* ./
 COPY prisma ./prisma
-
-RUN bun install
+RUN bun install --frozen-lockfile
+# Generate Prisma Client
 RUN bunx prisma generate
 
-# Copy source code
+# Final production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Expose backend port
 EXPOSE 3000
-
-# Entrypoint will be overridden by docker-compose for worker vs backend
 CMD ["bun", "run", "src/index.ts"]

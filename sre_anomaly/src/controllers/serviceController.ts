@@ -5,14 +5,28 @@ import { updatePrometheusTargets } from "../utils/prometheus";
 export class ServiceController {
   static async addService(req: Request, res: Response) {
     try {
-      const { name, url_server, url_codebase } = req.body;
-      if (!name || !url_server || !url_codebase) {
-        res.status(400).json({ error: "Service name, url_server, and url_codebase are required" });
+      // Accept `endpoint` as an alias for `url_server` for frontend convenience
+      const {
+        name,
+        url_server,
+        endpoint,
+        url_codebase = "",
+      } = req.body as {
+        name?: string;
+        url_server?: string;
+        endpoint?: string;
+        url_codebase?: string;
+      };
+
+      const serverUrl = url_server || endpoint;
+
+      if (!name || !serverUrl) {
+        res.status(400).json({ error: "Service name and server URL (url_server or endpoint) are required" });
         return;
       }
 
-      const user = res.locals.user;
-      const service = await ServiceService.createService(user.id, name, url_server, url_codebase);
+      const user = res.locals.user as { id: string };
+      const service = await ServiceService.createService(user.id, name, serverUrl, url_codebase);
       
       // Update Prometheus tracking
       await updatePrometheusTargets();

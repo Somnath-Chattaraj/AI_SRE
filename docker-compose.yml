@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────────
@@ -11,16 +11,6 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
-
-  blackbox-exporter:
-    image: prom/blackbox-exporter:v0.24.0
-    container_name: sre-blackbox
-    volumes:
-      - ./sre_anomaly/prometheus/blackbox.yml:/config/blackbox.yml
-    command:
-      - '--config.file=/config/blackbox.yml'
-    ports:
-      - "9115:9115"
 
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -38,18 +28,36 @@ services:
     depends_on:
       - blackbox-exporter
 
-  # ── Patcher RAG ───────────────────────────────────────────────────────────────
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: sre-blackbox
+    volumes:
+      - ./sre_anomaly/prometheus/blackbox.yml:/config/blackbox.yml
+    command:
+      - '--config.file=/config/blackbox.yml'
+    ports:
+      - "9115:9115"
+
+  # ── Backend Ecosystem ─────────────────────────────────────────────────────────
 
   patcher-rag:
     build:
       context: .
       dockerfile: patcher-rag/Dockerfile
     container_name: sre-patcher
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
+      - CHROMA_API_KEY=${CHROMA_API_KEY}
+      - CHROMA_TENANT=${CHROMA_TENANT}
+      - CHROMA_DATABASE=${CHROMA_DATABASE}
+      - HEALTH_CHECK_URL=${HEALTH_CHECK_URL:-http://host.docker.internal:6969/health}
+      - PM2_SERVICE_NAME=${PM2_SERVICE_NAME:-buggy-app}
       - PATCHER_PORT=4000
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GIT_AUTHOR_NAME=${GIT_AUTHOR_NAME:-AI SRE Patcher}
+      - GIT_AUTHOR_EMAIL=${GIT_AUTHOR_EMAIL:-sre-patcher@ai-sre.local}
     ports:
       - "4000:4000"
     healthcheck:
@@ -59,20 +67,19 @@ services:
       retries: 12
       start_period: 30s
 
-  # ── SRE Anomaly ───────────────────────────────────────────────────────────────
-
   backend:
-    build:
-      context: ./sre_anomaly
+    build: ./sre_anomaly
     container_name: sre-backend
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - PROMETHEUS_URL=http://prometheus:9090
       - PROMETHEUS_TARGETS_FILE=/etc/prometheus/targets/targets.json
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
       - PATCHER_URL=http://patcher-rag:4000
+      - FRONTEND_URL=http://localhost:3001
+      - BETTER_AUTH_URL=http://localhost:3000
     ports:
       - "3000:3000"
     volumes:
@@ -84,36 +91,47 @@ services:
         condition: service_healthy
 
   producer:
-    build:
-      context: ./sre_anomaly
+    build: ./sre_anomaly
     container_name: sre-producer
     command: ["bun", "run", "src/queue/producer.ts"]
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - PROMETHEUS_URL=http://prometheus:9090
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
     depends_on:
       - redis
 
   worker:
-    build:
-      context: ./sre_anomaly
-    command: ["bun", "run", "src/worker/worker.ts"]
+    build: ./sre_anomaly
     container_name: sre-worker
-    env_file:
-      - .env
+    command: ["bun", "run", "src/worker/worker.ts"]
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - PROMETHEUS_URL=http://prometheus:9090
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
       - PATCHER_URL=http://patcher-rag:4000
     depends_on:
       redis:
         condition: service_started
       patcher-rag:
         condition: service_healthy
+
+  # ── Frontend ──────────────────────────────────────────────────────────────────
+
+  frontend:
+    build: ./web
+    container_name: sre-frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   redis_data:

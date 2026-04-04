@@ -81,11 +81,13 @@ export interface PrometheusQueryResponse {
 
 export async function fetchPrometheusMetrics(
   serviceId: string,
-  metricName: 'probe_duration_seconds' | 'probe_success'
+  metricName: 'probe_duration_seconds' | 'probe_success',
+  windowSeconds = 600,  // default: 10-minute window for anomaly detection
+  stepSeconds = 15,     // default: 15 s step
 ): Promise<[number, number][]> {
   const end = Math.floor(Date.now() / 1000);
-  const start = end - 600; // 10-minute window → ~40 points at 15s step
-  const step = 15;
+  const start = end - windowSeconds;
+  const step = stepSeconds;
 
   const query = `${metricName}{service_id="${serviceId}"}`;
   const url = new URL(`${PROMETHEUS_URL}/api/v1/query_range`);

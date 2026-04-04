@@ -1,24 +1,25 @@
 import type { Request, Response, NextFunction } from "express";
-import { UserService } from "../services/userService";
+import { auth } from "../lib/auth";
+import { fromNodeHeaders } from "better-auth/node";
 
-export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const apiKey = req.headers["x-api-key"] as string;
-  
-  if (!apiKey) {
-    res.status(401).json({ error: "Missing x-api-key header" });
-    return;
-  }
-
+export async function authMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    const user = await UserService.getUserByApiKey(apiKey);
-    if (!user) {
-      res.status(401).json({ error: "Invalid API key" });
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (!session?.user) {
+      res.status(401).json({ error: "Unauthorized – please sign in" });
       return;
     }
 
-    res.locals.user = user;
+    res.locals.user = session.user;
     next();
   } catch (error) {
-    res.status(500).json({ error: "Failed to authenticate" });
+    res.status(500).json({ error: "Failed to validate session" });
   }
 }
