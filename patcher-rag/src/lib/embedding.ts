@@ -15,8 +15,8 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
 // RecursiveCharacterTextSplitter with "js" language uses JS-aware separators
 // (function boundaries, class declarations, blank lines) — pure JS, no native deps.
 const splitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
-  chunkSize: 500,
-  chunkOverlap: 50,
+  chunkSize: 1500,
+  chunkOverlap: 200,
 });
 
 export async function generateEmbeddings(

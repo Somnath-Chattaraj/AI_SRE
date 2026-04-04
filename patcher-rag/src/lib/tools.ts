@@ -89,6 +89,19 @@ export async function gitCommit(
   }
 }
 
+export async function gitDiffHead(repoDir: string): Promise<string> {
+  try {
+    const { stdout } = await execAsync(
+      "git show HEAD --no-color --unified=3",
+      { cwd: repoDir },
+    );
+    // Truncate to keep PR body reasonable
+    return stdout.length > 6000 ? stdout.slice(0, 6000) + "\n... (diff truncated)" : stdout;
+  } catch {
+    return "";
+  }
+}
+
 export async function gitLog(repoDir: string, n = 2): Promise<string> {
   try {
     const { stdout } = await execAsync(`git log --oneline -n ${n}`, { cwd: repoDir });

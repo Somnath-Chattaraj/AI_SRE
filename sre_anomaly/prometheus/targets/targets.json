@@ -1,11 +1,11 @@
 [
   {
     "targets": [
-      "http://my-app:3006/health"
+      "http://my-app2:3006/health"
     ],
     "labels": {
-      "user_id": "69d11339633981b7dc6a8bd2",
-      "service_id": "69d11345633981b7dc6a8bd3"
+      "user_id": "69d15e3f6fd8471a33e4dd44",
+      "service_id": "69d15e4d6fd8471a33e4dd45"
     }
   }
 ]
