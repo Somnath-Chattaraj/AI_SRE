@@ -18,7 +18,6 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
@@ -26,12 +25,12 @@ const navItems = [
   { href: "/dashboard/services", label: "Services", icon: IconServer },
   { href: "/dashboard/insights", label: "AI Insights", icon: IconBrain },
   { href: "/dashboard/pull-requests", label: "Fixes & PRs", icon: IconGitPullRequest },
-  { href: "/dashboard/notifications", label: "Notifications", icon: IconBell },
+  { href: "/dashboard/notifications", label: "Activity Feed", icon: IconBell },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar, unreadCount, setCommandPaletteOpen } = useAppStore();
+  const { sidebarCollapsed, toggleSidebar, setCommandPaletteOpen } = useAppStore();
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -122,17 +121,6 @@ export function Sidebar() {
                     <item.icon className="h-5 w-5 shrink-0" />
                     {!sidebarCollapsed && (
                       <span className="flex-1">{item.label}</span>
-                    )}
-                    {!sidebarCollapsed && item.label === "Notifications" && unreadCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="h-5 min-w-5 justify-center bg-[hsl(0,72%,51%)] px-1.5 text-[10px]"
-                      >
-                        {unreadCount}
-                      </Badge>
-                    )}
-                    {sidebarCollapsed && item.label === "Notifications" && unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[hsl(0,72%,51%)] ring-2 ring-[hsl(225,18%,9%)]" />
                     )}
                   </Link>
                 </TooltipTrigger>

@@ -7,23 +7,23 @@ import {
   IconGitMerge,
   IconExternalLink,
   IconClock,
-  IconCode,
   IconX,
   IconEye,
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
-import { fetchPullRequests } from "@/lib/mock-api";
-import type { PullRequest, PRStatus } from "@/lib/mock-data";
+import { fetchRealIncidents, type BackendIncident } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const statusConfig: Record<PRStatus, { color: string; bg: string; icon: React.ReactNode }> = {
-  pending: {
+type PRStatus = "open" | "investigating" | "resolved" | "failed";
+
+const statusConfig: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
+  open: {
     color: "hsl(38, 92%, 55%)",
     bg: "hsl(38, 92%, 50%)",
     icon: <IconClock className="h-4 w-4" />,
   },
-  merged: {
+  resolved: {
     color: "hsl(142, 71%, 55%)",
     bg: "hsl(142, 71%, 45%)",
     icon: <IconGitMerge className="h-4 w-4" />,
@@ -33,7 +33,7 @@ const statusConfig: Record<PRStatus, { color: string; bg: string; icon: React.Re
     bg: "hsl(0, 72%, 51%)",
     icon: <IconX className="h-4 w-4" />,
   },
-  reviewing: {
+  investigating: {
     color: "hsl(265, 90%, 70%)",
     bg: "hsl(265, 90%, 65%)",
     icon: <IconEye className="h-4 w-4" />,
@@ -50,25 +50,24 @@ const item = {
 };
 
 export default function PullRequestsPage() {
-  const [prs, setPrs] = useState<PullRequest[]>([]);
+  const [prs, setPrs] = useState<BackendIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | PRStatus>("all");
-  const [expandedPR, setExpandedPR] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPullRequests().then((p) => {
-      setPrs(p);
+    fetchRealIncidents().then((all) => {
+      setPrs(all.filter((i) => i.prUrl));
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const filtered = filter === "all" ? prs : prs.filter((p) => p.status === filter);
 
   const stats = {
     total: prs.length,
-    pending: prs.filter((p) => p.status === "pending").length,
-    merged: prs.filter((p) => p.status === "merged").length,
-    reviewing: prs.filter((p) => p.status === "reviewing").length,
+    open: prs.filter((p) => p.status === "open").length,
+    resolved: prs.filter((p) => p.status === "resolved").length,
+    investigating: prs.filter((p) => p.status === "investigating").length,
   };
 
   const timeAgo = (ts: string) => {
@@ -85,7 +84,7 @@ export default function PullRequestsPage() {
     <>
       <TopBar
         title="Fixes & Pull Requests"
-        subtitle={`${stats.total} AI-generated fixes · ${stats.merged} merged`}
+        subtitle={`${stats.total} AI-generated fixes · ${stats.resolved} resolved`}
       />
 
       <div className="p-6">
@@ -97,7 +96,7 @@ export default function PullRequestsPage() {
         >
           {/* Summary */}
           <motion.div variants={item} className="flex flex-wrap items-center gap-3">
-            {(["all", "pending", "reviewing", "merged", "failed"] as const).map((f) => {
+            {(["all", "open", "investigating", "resolved", "failed"] as const).map((f) => {
               const count =
                 f === "all"
                   ? prs.length
@@ -141,113 +140,55 @@ export default function PullRequestsPage() {
               <p className="mt-1 text-sm">No AI-generated fixes match this filter</p>
             </div>
           ) : (
-            filtered.map((pr) => (
-              <motion.div key={pr.id} variants={item}>
-                <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 transition-colors hover:border-[hsl(220,14%,22%)]">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                        style={{
-                          backgroundColor: `${statusConfig[pr.status].bg}15`,
-                          color: statusConfig[pr.status].color,
-                        }}
-                      >
-                        {statusConfig[pr.status].icon}
+            filtered.map((pr) => {
+              const cfg = statusConfig[pr.status] ?? statusConfig.open;
+              return (
+                <motion.div key={pr.id} variants={item}>
+                  <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 transition-colors hover:border-[hsl(220,14%,22%)]">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                          style={{ backgroundColor: `${cfg.bg}15`, color: cfg.color }}
+                        >
+                          {cfg.icon}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-white">{pr.title}</h3>
+                          <p className="mt-0.5 text-xs text-[hsl(220,10%,50%)]">
+                            {pr.serviceName} · Detected {timeAgo(pr.detectedAt)}
+                            {pr.resolvedAt && ` · Resolved ${timeAgo(pr.resolvedAt)}`}
+                          </p>
+                          {pr.description && (
+                            <p className="mt-1.5 text-xs text-[hsl(220,10%,60%)]">{pr.description}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-white">{pr.title}</h3>
-                        <p className="mt-0.5 text-xs text-[hsl(220,10%,50%)]">
-                          {pr.serviceName} · Created {timeAgo(pr.createdAt)}
-                          {pr.mergedAt && ` · Merged ${timeAgo(pr.mergedAt)}`}
-                        </p>
-                        <p className="mt-1.5 text-xs text-[hsl(220,10%,60%)]">
-                          {pr.description}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-4">
                       <Badge
-                        className="border-transparent text-[10px]"
-                        style={{
-                          color: statusConfig[pr.status].color,
-                          backgroundColor: `${statusConfig[pr.status].bg}15`,
-                        }}
+                        className="border-transparent text-[10px] shrink-0 ml-4"
+                        style={{ color: cfg.color, backgroundColor: `${cfg.bg}15` }}
                       >
                         {pr.status}
                       </Badge>
                     </div>
-                  </div>
 
-                  {/* Stats + Actions */}
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1 text-xs text-[hsl(220,10%,45%)]">
-                        <IconCode className="h-3.5 w-3.5" />
-                        {pr.filesChanged} files
-                      </span>
-                      <span className="text-xs text-[hsl(142,71%,55%)]">
-                        +{pr.additions}
-                      </span>
-                      <span className="text-xs text-[hsl(0,72%,60%)]">
-                        -{pr.deletions}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() =>
-                          setExpandedPR(expandedPR === pr.id ? null : pr.id)
-                        }
-                        className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] transition-colors hover:text-[hsl(265,90%,80%)]"
-                      >
-                        <IconCode className="h-3 w-3" />
-                        {expandedPR === pr.id ? "Hide diff" : "View diff"}
-                      </button>
-                      <a
-                        href={pr.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-[hsl(220,10%,55%)] transition-colors hover:text-white"
-                      >
-                        <IconExternalLink className="h-3 w-3" />
-                        GitHub
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Expandable Diff */}
-                  {expandedPR === pr.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-4 overflow-hidden rounded-lg border border-[hsl(220,14%,16%)] bg-[hsl(222,14%,7%)]"
-                    >
-                      <div className="border-b border-[hsl(220,14%,14%)] px-3 py-1.5 text-[10px] text-[hsl(220,10%,45%)]">
-                        {pr.diffSummary}
+                    {pr.prUrl && (
+                      <div className="mt-4">
+                        <a
+                          href={pr.prUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] transition-colors hover:text-[hsl(265,90%,80%)]"
+                        >
+                          <IconExternalLink className="h-3 w-3" />
+                          View Pull Request on GitHub
+                        </a>
                       </div>
-                      <pre className="max-h-[300px] overflow-auto p-0 text-xs">
-                        {pr.diff.split("\n").map((line, i) => (
-                          <div
-                            key={i}
-                            className={`diff-line ${
-                              line.startsWith("+") && !line.startsWith("+++")
-                                ? "diff-add"
-                                : line.startsWith("-") && !line.startsWith("---")
-                                  ? "diff-remove"
-                                  : ""
-                            }`}
-                          >
-                            {line}
-                          </div>
-                        ))}
-                      </pre>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-            ))
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </motion.div>
       </div>

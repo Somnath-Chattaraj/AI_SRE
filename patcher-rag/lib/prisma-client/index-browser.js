@@ -145,6 +145,7 @@ exports.Prisma.IncidentScalarFieldEnum = {
   type: 'type',
   severity: 'severity',
   details: 'details',
+  prUrl: 'prUrl',
   serviceId: 'serviceId',
   patchStatus: 'patchStatus',
   createdAt: 'createdAt',

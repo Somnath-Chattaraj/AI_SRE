@@ -54,6 +54,7 @@ model Incident {
   type        String   @default("unknown")
   severity    String   @default("MEDIUM")
   details     Json?
+  prUrl       String? // GitHub PR URL set by patcher after successful push
   serviceId   String   @db.ObjectId
   patchStatus String   @default("PENDING") // PENDING | PROCESSING | RESOLVED | FAILED
   service     Service  @relation(fields: [serviceId], references: [id])

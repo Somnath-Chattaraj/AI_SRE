@@ -1,37 +1,24 @@
-// ============================================================
-// AutoHeal – Real API Client (sre_anomaly backend)
-// ============================================================
-// Uses credentials: "include" so better-auth session cookies are
-// forwarded automatically on every request.
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers: { "Content-Type": "application/json", ...options?.headers },
   });
 
   if (!res.ok) {
     const text = await res.text();
     let msg: string;
-    try {
-      msg = (JSON.parse(text) as { error?: string })?.error || text;
-    } catch {
-      msg = text;
-    }
+    try { msg = (JSON.parse(text) as { error?: string })?.error || text; }
+    catch { msg = text; }
     throw new Error(msg || `HTTP ${res.status}`);
   }
 
   return res.json() as Promise<T>;
 }
 
-// ─── Types ───────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface BackendService {
   id: string;
@@ -46,9 +33,9 @@ export interface BackendService {
 export interface ServiceMetrics {
   serviceId: string;
   status: "healthy" | "warning" | "critical" | "unknown";
-  uptime: number;      // percentage 0–100
-  avgLatency: number;  // ms
-  lastChecked: string; // ISO timestamp
+  uptime: number;
+  avgLatency: number;
+  lastChecked: string;
   timeSeries: {
     latency: { timestamp: string; value: number }[];
     uptime: { timestamp: string; value: number }[];
@@ -58,59 +45,96 @@ export interface ServiceMetrics {
 export interface BackendIncident {
   id: string;
   serviceId: string;
+  serviceName: string;
   title: string;
   description?: string;
   type: string;
   severity: string;
+  status: "open" | "investigating" | "resolved" | "failed";
   patchStatus: string;
-  createdAt: string;
-  updatedAt: string;
+  prUrl?: string;
+  aiAnalysis?: string;
+  rootCause?: string;
+  confidence?: number;
+  patches?: { filePath: string; rationale: string }[];
+  patchAnalysis?: string;
+  patchModel?: string;
+  patchedAt?: string;
+  detectedAt: string;
+  resolvedAt?: string;
 }
 
-// ─── Services ────────────────────────────────────────────────
+export interface AnomalyLog {
+  id: string;
+  metric: string;
+  value: number | null;
+  raw_data: {
+    probe_success?: [number, number][];
+    probe_duration_seconds?: [number, number][];
+    probe_http_status_code?: [number, number][];
+    probe_http_ssl?: [number, number][];
+    probe_http_content_length?: [number, number][];
+    stats?: Record<string, number>;
+  } | null;
+  serviceId: string;
+  createdAt: string;
+}
 
-/** GET /services */
+export interface AIAction {
+  id: string;
+  type: "anomaly_detected" | "fix_generated" | "pr_created" | "auto_resolved" | "bug_detected";
+  message: string;
+  serviceName: string;
+  timestamp: string;
+}
+
+// ─── Services ─────────────────────────────────────────────────────────────────
+
 export async function fetchRealServices(): Promise<BackendService[]> {
   const res = await apiCall<{ services: BackendService[] }>("/services");
   return res.services;
 }
 
-/** POST /services */
 export async function addRealService(data: {
   name: string;
   url_server: string;
   url_codebase?: string;
 }): Promise<BackendService> {
-  const res = await apiCall<{ message: string; service: BackendService }>(
-    "/services",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
+  const res = await apiCall<{ message: string; service: BackendService }>("/services", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
   return res.service;
 }
 
-/** DELETE /services/:id */
 export async function deleteRealService(id: string): Promise<void> {
   await apiCall<{ message: string }>(`/services/${id}`, { method: "DELETE" });
 }
 
-// ─── Metrics ─────────────────────────────────────────────────
+// ─── Metrics ──────────────────────────────────────────────────────────────────
 
-/** GET /services/:id/metrics */
 export async function fetchRealMetrics(serviceId: string): Promise<ServiceMetrics> {
   return apiCall<ServiceMetrics>(`/services/${serviceId}/metrics`);
 }
 
-// ─── Incidents ───────────────────────────────────────────────
+// ─── Incidents ────────────────────────────────────────────────────────────────
 
-/** GET /incidents?service_id=:id */
-export async function fetchRealIncidents(
-  serviceId: string,
-): Promise<BackendIncident[]> {
-  const res = await apiCall<{ incidents: BackendIncident[] }>(
-    `/incidents?service_id=${encodeURIComponent(serviceId)}`,
-  );
+export async function fetchRealIncidents(serviceId?: string): Promise<BackendIncident[]> {
+  const qs = serviceId ? `?service_id=${encodeURIComponent(serviceId)}` : "";
+  const res = await apiCall<{ incidents: BackendIncident[] }>(`/incidents${qs}`);
   return res.incidents;
+}
+
+// ─── AI Actions ───────────────────────────────────────────────────────────────
+
+export async function fetchRealAIActions(): Promise<AIAction[]> {
+  const res = await apiCall<{ actions: AIAction[] }>("/ai-actions");
+  return res.actions;
+}
+
+// ─── Anomaly Logs ─────────────────────────────────────────────────────────────
+
+export async function fetchAnomalyLogs(serviceId: string): Promise<AnomalyLog[]> {
+  const res = await apiCall<{ logs: AnomalyLog[] }>(`/services/${serviceId}/anomaly-logs`);
+  return res.logs;
 }

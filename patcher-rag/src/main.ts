@@ -239,8 +239,30 @@ async function processIncident(incidentId: string): Promise<void> {
       repoDir: cloneDir,
     });
 
-    if (pr.success) log(`PR: ${pr.url}`, incidentId);
-    else log(`PR failed (non-fatal): ${pr.error}`, incidentId);
+    // Save patch details + PR URL back to DB for the frontend
+    const patchSummary = patchResult.patches.map((p) => ({
+      filePath: p.filePath,
+      rationale: p.rationale,
+    }));
+    await prisma.incident.update({
+      where: { id: incidentId },
+      data: {
+        prUrl: pr.success ? pr.url : undefined,
+        details: {
+          ...(details ?? {}),
+          patches_applied: patchSummary,
+          patch_analysis: patchResult.analysis ?? null,
+          patch_model: MODEL,
+          patched_at: new Date().toISOString(),
+        },
+      },
+    });
+
+    if (pr.success) {
+      log(`PR: ${pr.url}`, incidentId);
+    } else {
+      log(`PR failed (non-fatal): ${pr.error}`, incidentId);
+    }
 
     await finish(incidentId, "completed");
   } catch (err) {

@@ -20,9 +20,9 @@ services:
       - ./sre_anomaly/prometheus/targets:/etc/prometheus/targets
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
     ports:
       - "9090:9090"
     depends_on:
@@ -34,7 +34,7 @@ services:
     volumes:
       - ./sre_anomaly/prometheus/blackbox.yml:/config/blackbox.yml
     command:
-      - '--config.file=/config/blackbox.yml'
+      - "--config.file=/config/blackbox.yml"
     ports:
       - "9115:9115"
 
@@ -80,6 +80,7 @@ services:
       - PATCHER_URL=http://patcher-rag:4000
       - FRONTEND_URL=http://localhost:3001
       - BETTER_AUTH_URL=http://localhost:3000
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
     ports:
       - "3000:3000"
     volumes:

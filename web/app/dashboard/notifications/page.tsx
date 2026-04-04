@@ -4,41 +4,37 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   IconBell,
-  IconCheck,
-  IconChecks,
   IconAlertTriangle,
-  IconInfoCircle,
-  IconCircleCheck,
-  IconAlertCircle,
-  IconServer,
+  IconBug,
+  IconSparkles,
+  IconShieldCheck,
+  IconGitPullRequest,
+  IconActivity,
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
-import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/mock-api";
-import type { Notification } from "@/lib/mock-data";
-import { Button } from "@/components/ui/button";
+import { fetchRealAIActions, type AIAction } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAppStore } from "@/lib/store";
-import Link from "next/link";
 
-const typeConfig: Record<
-  string,
-  { color: string; icon: React.ReactNode }
-> = {
-  info: {
-    color: "hsl(199, 89%, 55%)",
-    icon: <IconInfoCircle className="h-5 w-5" />,
-  },
-  warning: {
+const actionConfig: Record<string, { color: string; icon: React.ReactNode }> = {
+  anomaly_detected: {
     color: "hsl(38, 92%, 55%)",
     icon: <IconAlertTriangle className="h-5 w-5" />,
   },
-  error: {
+  bug_detected: {
     color: "hsl(0, 72%, 60%)",
-    icon: <IconAlertCircle className="h-5 w-5" />,
+    icon: <IconBug className="h-5 w-5" />,
   },
-  success: {
+  fix_generated: {
+    color: "hsl(199, 89%, 55%)",
+    icon: <IconSparkles className="h-5 w-5" />,
+  },
+  pr_created: {
+    color: "hsl(265, 90%, 70%)",
+    icon: <IconGitPullRequest className="h-5 w-5" />,
+  },
+  auto_resolved: {
     color: "hsl(142, 71%, 55%)",
-    icon: <IconCircleCheck className="h-5 w-5" />,
+    icon: <IconShieldCheck className="h-5 w-5" />,
   },
 };
 
@@ -52,33 +48,15 @@ const item = {
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
-  const setUnreadCount = useAppStore((s) => s.setUnreadCount);
 
   useEffect(() => {
-    fetchNotifications().then((n) => {
-      setNotifications(n);
-      setLoading(false);
-    });
+    fetchRealAIActions()
+      .then(setActions)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
-
-  const unread = notifications.filter((n) => !n.read);
-
-  const handleMarkRead = async (id: string) => {
-    await markNotificationRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-    const newUnread = notifications.filter((n) => !n.read && n.id !== id).length;
-    setUnreadCount(newUnread);
-  };
-
-  const handleMarkAllRead = async () => {
-    await markAllNotificationsRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
-  };
 
   const timeAgo = (ts: string) => {
     const diff = Date.now() - new Date(ts).getTime();
@@ -93,8 +71,8 @@ export default function NotificationsPage() {
   return (
     <>
       <TopBar
-        title="Notifications"
-        subtitle={`${unread.length} unread notifications`}
+        title="Activity Feed"
+        subtitle={`${actions.length} AI actions`}
       />
 
       <div className="p-6">
@@ -103,108 +81,47 @@ export default function NotificationsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Header Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <IconBell className="h-5 w-5 text-[hsl(220,10%,55%)]" />
-              <h2 className="text-sm font-semibold text-white">
-                All Notifications ({notifications.length})
-              </h2>
-            </div>
-            {unread.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMarkAllRead}
-                className="border-[hsl(220,14%,20%)] bg-transparent text-xs text-[hsl(220,10%,60%)] hover:bg-[hsl(220,14%,14%)] hover:text-white"
-              >
-                <IconChecks className="mr-1.5 h-3.5 w-3.5" />
-                Mark all read
-              </Button>
-            )}
-          </div>
-
-          {/* Notification List */}
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-[80px] rounded-xl bg-[hsl(225,15%,12%)]" />
+                <Skeleton key={i} className="h-[72px] rounded-xl bg-[hsl(225,15%,12%)]" />
               ))}
             </div>
-          ) : notifications.length === 0 ? (
+          ) : actions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[hsl(220,10%,45%)]">
               <IconBell className="mb-3 h-12 w-12 opacity-30" />
-              <p className="text-lg font-medium text-white">No notifications</p>
-              <p className="mt-1 text-sm">You&apos;re all caught up!</p>
+              <p className="text-lg font-medium text-white">No activity yet</p>
+              <p className="mt-1 text-sm">AI actions will appear here as they happen</p>
             </div>
           ) : (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="space-y-2"
-            >
-              {notifications.map((notif) => {
-                const cfg = typeConfig[notif.type];
+            <motion.div variants={container} initial="hidden" animate="show" className="space-y-2">
+              {actions.map((action) => {
+                const cfg = actionConfig[action.type] ?? {
+                  color: "hsl(220, 10%, 55%)",
+                  icon: <IconActivity className="h-5 w-5" />,
+                };
                 return (
                   <motion.div
-                    key={notif.id}
+                    key={action.id}
                     variants={item}
-                    className={`group relative flex items-start gap-4 rounded-xl border p-4 transition-all ${
-                      notif.read
-                        ? "border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)]"
-                        : "border-[hsl(220,14%,20%)] bg-[hsl(225,15%,12%)]"
-                    } hover:border-[hsl(220,14%,24%)]`}
+                    className="flex items-start gap-4 rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-4 hover:border-[hsl(220,14%,22%)]"
                   >
-                    {/* Unread indicator */}
-                    {!notif.read && (
-                      <span className="absolute left-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[hsl(265,90%,65%)]" />
-                    )}
-
-                    {/* Icon */}
                     <div
                       className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                      style={{
-                        backgroundColor: `${cfg.color}15`,
-                        color: cfg.color,
-                      }}
+                      style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}
                     >
                       {cfg.icon}
                     </div>
-
-                    {/* Content */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between">
-                        <h4 className={`text-sm font-medium ${notif.read ? "text-[hsl(220,10%,65%)]" : "text-white"}`}>
-                          {notif.title}
-                        </h4>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium text-white line-clamp-2">{action.message}</p>
                         <span className="shrink-0 text-[10px] text-[hsl(220,10%,40%)]">
-                          {timeAgo(notif.timestamp)}
+                          {timeAgo(action.timestamp)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[hsl(220,10%,50%)]">
-                        {notif.message}
+                      <p className="mt-0.5 text-[11px] text-[hsl(220,10%,45%)]">
+                        {action.serviceName} · {action.type.replace(/_/g, " ")}
                       </p>
-                      <div className="mt-2 flex items-center gap-3">
-                        {notif.serviceId && (
-                          <Link
-                            href={`/dashboard/services/${notif.serviceId}`}
-                            className="flex items-center gap-1 text-[10px] text-[hsl(265,90%,70%)] hover:underline"
-                          >
-                            <IconServer className="h-3 w-3" />
-                            View service
-                          </Link>
-                        )}
-                        {!notif.read && (
-                          <button
-                            onClick={() => handleMarkRead(notif.id)}
-                            className="flex items-center gap-1 text-[10px] text-[hsl(220,10%,45%)] transition-colors hover:text-white"
-                          >
-                            <IconCheck className="h-3 w-3" />
-                            Mark read
-                          </button>
-                        )}
-                      </div>
                     </div>
                   </motion.div>
                 );

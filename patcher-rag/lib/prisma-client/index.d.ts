@@ -4305,6 +4305,7 @@ export namespace Prisma {
     description: string | null
     type: string | null
     severity: string | null
+    prUrl: string | null
     serviceId: string | null
     patchStatus: string | null
     createdAt: Date | null
@@ -4317,6 +4318,7 @@ export namespace Prisma {
     description: string | null
     type: string | null
     severity: string | null
+    prUrl: string | null
     serviceId: string | null
     patchStatus: string | null
     createdAt: Date | null
@@ -4330,6 +4332,7 @@ export namespace Prisma {
     type: number
     severity: number
     details: number
+    prUrl: number
     serviceId: number
     patchStatus: number
     createdAt: number
@@ -4344,6 +4347,7 @@ export namespace Prisma {
     description?: true
     type?: true
     severity?: true
+    prUrl?: true
     serviceId?: true
     patchStatus?: true
     createdAt?: true
@@ -4356,6 +4360,7 @@ export namespace Prisma {
     description?: true
     type?: true
     severity?: true
+    prUrl?: true
     serviceId?: true
     patchStatus?: true
     createdAt?: true
@@ -4369,6 +4374,7 @@ export namespace Prisma {
     type?: true
     severity?: true
     details?: true
+    prUrl?: true
     serviceId?: true
     patchStatus?: true
     createdAt?: true
@@ -4455,6 +4461,7 @@ export namespace Prisma {
     type: string
     severity: string
     details: JsonValue | null
+    prUrl: string | null
     serviceId: string
     patchStatus: string
     createdAt: Date
@@ -4485,6 +4492,7 @@ export namespace Prisma {
     type?: boolean
     severity?: boolean
     details?: boolean
+    prUrl?: boolean
     serviceId?: boolean
     patchStatus?: boolean
     createdAt?: boolean
@@ -4501,13 +4509,14 @@ export namespace Prisma {
     type?: boolean
     severity?: boolean
     details?: boolean
+    prUrl?: boolean
     serviceId?: boolean
     patchStatus?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type IncidentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "type" | "severity" | "details" | "serviceId" | "patchStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["incident"]>
+  export type IncidentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "type" | "severity" | "details" | "prUrl" | "serviceId" | "patchStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["incident"]>
   export type IncidentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     service?: boolean | ServiceDefaultArgs<ExtArgs>
   }
@@ -4524,6 +4533,7 @@ export namespace Prisma {
       type: string
       severity: string
       details: Prisma.JsonValue | null
+      prUrl: string | null
       serviceId: string
       patchStatus: string
       createdAt: Date
@@ -4927,6 +4937,7 @@ export namespace Prisma {
     readonly type: FieldRef<"Incident", 'String'>
     readonly severity: FieldRef<"Incident", 'String'>
     readonly details: FieldRef<"Incident", 'Json'>
+    readonly prUrl: FieldRef<"Incident", 'String'>
     readonly serviceId: FieldRef<"Incident", 'String'>
     readonly patchStatus: FieldRef<"Incident", 'String'>
     readonly createdAt: FieldRef<"Incident", 'DateTime'>
@@ -6394,6 +6405,7 @@ export namespace Prisma {
     type: 'type',
     severity: 'severity',
     details: 'details',
+    prUrl: 'prUrl',
     serviceId: 'serviceId',
     patchStatus: 'patchStatus',
     createdAt: 'createdAt',
@@ -6687,6 +6699,7 @@ export namespace Prisma {
     type?: StringFilter<"Incident"> | string
     severity?: StringFilter<"Incident"> | string
     details?: JsonNullableFilter<"Incident">
+    prUrl?: StringNullableFilter<"Incident"> | string | null
     serviceId?: StringFilter<"Incident"> | string
     patchStatus?: StringFilter<"Incident"> | string
     createdAt?: DateTimeFilter<"Incident"> | Date | string
@@ -6701,6 +6714,7 @@ export namespace Prisma {
     type?: SortOrder
     severity?: SortOrder
     details?: SortOrder
+    prUrl?: SortOrder
     serviceId?: SortOrder
     patchStatus?: SortOrder
     createdAt?: SortOrder
@@ -6718,6 +6732,7 @@ export namespace Prisma {
     type?: StringFilter<"Incident"> | string
     severity?: StringFilter<"Incident"> | string
     details?: JsonNullableFilter<"Incident">
+    prUrl?: StringNullableFilter<"Incident"> | string | null
     serviceId?: StringFilter<"Incident"> | string
     patchStatus?: StringFilter<"Incident"> | string
     createdAt?: DateTimeFilter<"Incident"> | Date | string
@@ -6732,6 +6747,7 @@ export namespace Prisma {
     type?: SortOrder
     severity?: SortOrder
     details?: SortOrder
+    prUrl?: SortOrder
     serviceId?: SortOrder
     patchStatus?: SortOrder
     createdAt?: SortOrder
@@ -6751,6 +6767,7 @@ export namespace Prisma {
     type?: StringWithAggregatesFilter<"Incident"> | string
     severity?: StringWithAggregatesFilter<"Incident"> | string
     details?: JsonNullableWithAggregatesFilter<"Incident">
+    prUrl?: StringNullableWithAggregatesFilter<"Incident"> | string | null
     serviceId?: StringWithAggregatesFilter<"Incident"> | string
     patchStatus?: StringWithAggregatesFilter<"Incident"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Incident"> | Date | string
@@ -7001,6 +7018,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     patchStatus?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -7014,6 +7032,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     serviceId: string
     patchStatus?: string
     createdAt?: Date | string
@@ -7026,6 +7045,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7038,6 +7058,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     serviceId?: StringFieldUpdateOperationsInput | string
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7051,6 +7072,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     serviceId: string
     patchStatus?: string
     createdAt?: Date | string
@@ -7063,6 +7085,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7074,6 +7097,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     serviceId?: StringFieldUpdateOperationsInput | string
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7355,6 +7379,7 @@ export namespace Prisma {
     type?: SortOrder
     severity?: SortOrder
     details?: SortOrder
+    prUrl?: SortOrder
     serviceId?: SortOrder
     patchStatus?: SortOrder
     createdAt?: SortOrder
@@ -7367,6 +7392,7 @@ export namespace Prisma {
     description?: SortOrder
     type?: SortOrder
     severity?: SortOrder
+    prUrl?: SortOrder
     serviceId?: SortOrder
     patchStatus?: SortOrder
     createdAt?: SortOrder
@@ -7379,6 +7405,7 @@ export namespace Prisma {
     description?: SortOrder
     type?: SortOrder
     severity?: SortOrder
+    prUrl?: SortOrder
     serviceId?: SortOrder
     patchStatus?: SortOrder
     createdAt?: SortOrder
@@ -7961,6 +7988,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     patchStatus?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -7973,6 +8001,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     patchStatus?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8080,6 +8109,7 @@ export namespace Prisma {
     type?: StringFilter<"Incident"> | string
     severity?: StringFilter<"Incident"> | string
     details?: JsonNullableFilter<"Incident">
+    prUrl?: StringNullableFilter<"Incident"> | string | null
     serviceId?: StringFilter<"Incident"> | string
     patchStatus?: StringFilter<"Incident"> | string
     createdAt?: DateTimeFilter<"Incident"> | Date | string
@@ -8368,6 +8398,7 @@ export namespace Prisma {
     type?: string
     severity?: string
     details?: InputJsonValue | null
+    prUrl?: string | null
     patchStatus?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8388,6 +8419,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8399,6 +8431,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8410,6 +8443,7 @@ export namespace Prisma {
     type?: StringFieldUpdateOperationsInput | string
     severity?: StringFieldUpdateOperationsInput | string
     details?: InputJsonValue | InputJsonValue | null
+    prUrl?: NullableStringFieldUpdateOperationsInput | string | null
     patchStatus?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

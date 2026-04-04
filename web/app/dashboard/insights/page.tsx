@@ -11,10 +11,10 @@ import {
   IconArrowRight,
   IconTarget,
   IconChartBar,
+  IconCode,
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
-import { fetchIncidents, fetchAIActions } from "@/lib/mock-api";
-import type { Incident, AIAction } from "@/lib/mock-data";
+import { fetchRealIncidents, fetchRealAIActions, type BackendIncident, type AIAction } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -29,13 +29,13 @@ const item = {
 };
 
 export default function InsightsPage() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [incidents, setIncidents] = useState<BackendIncident[]>([]);
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [inc, act] = await Promise.all([fetchIncidents(), fetchAIActions()]);
+      const [inc, act] = await Promise.all([fetchRealIncidents(), fetchRealAIActions()]);
       setIncidents(inc);
       setActions(act);
       setLoading(false);
@@ -289,6 +289,25 @@ export default function InsightsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Patches applied */}
+                    {inc.patches && inc.patches.length > 0 && (
+                      <div className="mt-3 rounded-lg bg-[hsl(220,14%,10%)] p-3">
+                        <div className="mb-1.5 flex items-center gap-1.5">
+                          <IconCode className="h-3.5 w-3.5 text-[hsl(142,71%,55%)]" />
+                          <span className="text-[10px] font-semibold text-[hsl(142,71%,65%)]">
+                            Files Patched ({inc.patches.length})
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {inc.patches.map((p, i) => (
+                            <p key={i} className="font-mono text-[11px] text-[hsl(199,89%,60%)]">
+                              {p.filePath}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* View in Service */}
                     <Link

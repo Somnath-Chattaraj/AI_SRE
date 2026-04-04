@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   description:
     "Intelligent blackbox monitoring with automated anomaly detection, root cause analysis, and self-healing via AI-generated pull requests.",
   keywords: ["monitoring", "AI", "self-healing", "DevOps", "observability", "SRE"],
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

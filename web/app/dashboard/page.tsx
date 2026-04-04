@@ -14,12 +14,29 @@ import {
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
 import {
-  fetchAIActions,
-  fetchLatencyTimeSeries,
-  type DashboardStats,
-} from "@/lib/mock-api";
-import { fetchRealServices, fetchRealMetrics, type ServiceMetrics } from "@/lib/api-client";
-import type { AIAction, TimeSeriesData } from "@/lib/mock-data";
+  fetchRealServices,
+  fetchRealMetrics,
+  fetchRealAIActions,
+  type ServiceMetrics,
+  type AIAction,
+} from "@/lib/api-client";
+
+interface DashboardStats {
+  totalServices: number;
+  avgUptime: number;
+  avgLatency: number;
+  avgErrorRate: number;
+  activeIncidents: number;
+  healthyCount: number;
+  warningCount: number;
+  criticalCount: number;
+}
+
+interface LatencySeries {
+  label: string;
+  color: string;
+  data: { timestamp: string; value: number }[];
+}
 import {
   AreaChart,
   Area,
@@ -73,7 +90,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [actions, setActions] = useState<AIAction[]>([]);
-  const [latencyData, setLatencyData] = useState<TimeSeriesData[]>([]);
+  const [latencyData, setLatencyData] = useState<LatencySeries[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,17 +100,13 @@ export default function DashboardPage() {
   async function load() {
     setLoading(true);
 
-    // Load AI actions + latency time-series from mock (not yet wired to backend)
-    const [actionsData, latencyRaw] = await Promise.all([
-      fetchAIActions(),
-      fetchLatencyTimeSeries(),
-    ]);
-    setActions(actionsData);
-    setLatencyData(latencyRaw);
-
-    // Load real services + metrics
     try {
-      const raw = await fetchRealServices();
+      const [raw, actionsData] = await Promise.all([
+        fetchRealServices(),
+        fetchRealAIActions(),
+      ]);
+      setActions(actionsData);
+
       const metricsList = await Promise.allSettled(
         raw.map((s) => fetchRealMetrics(s.id)),
       );
@@ -112,6 +125,22 @@ export default function DashboardPage() {
       });
 
       setServices(rows);
+
+      // Build latency series from first service with timeSeries data
+      const colors = ["hsl(199,89%,55%)", "hsl(265,90%,70%)", "hsl(38,92%,55%)", "hsl(142,71%,55%)"];
+      const series: LatencySeries[] = metricsList
+        .map((m, i) => {
+          if (m.status !== "fulfilled") return null;
+          const ts = m.value.timeSeries?.latency;
+          if (!ts || ts.length === 0) return null;
+          return {
+            label: raw[i].name,
+            color: colors[i % colors.length],
+            data: ts,
+          };
+        })
+        .filter((s): s is LatencySeries => s !== null);
+      setLatencyData(series);
 
       // Compute dashboard stats from real data
       if (rows.length > 0) {
@@ -222,7 +251,7 @@ export default function DashboardPage() {
             <div className="mb-4">
               <p className="text-sm font-medium text-white">Latency trends</p>
               <p className="mt-0.5 text-xs text-[hsl(220,10%,40%)]">
-                Past 24 h · mock data
+                Past 24 h · live data
               </p>
             </div>
             {loading ? (

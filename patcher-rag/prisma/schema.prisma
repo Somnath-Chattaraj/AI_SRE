@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../lib/prisma-client"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+  output        = "../lib/prisma-client"
 }
 
 datasource db {
@@ -45,6 +46,7 @@ model Incident {
   type        String   @default("unknown")
   severity    String   @default("MEDIUM")
   details     Json?
+  prUrl       String?
   serviceId   String   @db.ObjectId
   patchStatus String   @default("PENDING") // PENDING | PROCESSING | RESOLVED | FAILED
   service     Service  @relation(fields: [serviceId], references: [id])

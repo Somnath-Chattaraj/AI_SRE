@@ -5,28 +5,26 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   IconArrowLeft,
-  IconClock,
-  IconActivity,
   IconAlertTriangle,
   IconBrain,
   IconGitPullRequest,
   IconExternalLink,
   IconSparkles,
   IconCircleCheck,
-  IconFilter,
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
 import {
-  fetchService,
-  fetchServiceMetrics,
-  fetchIncidentsByService,
-  fetchPullRequestsByService,
-  fetchServiceLogs,
-} from "@/lib/mock-api";
-import type { Service, Incident, PullRequest, LogEntry, TimeSeriesData } from "@/lib/mock-data";
+  fetchRealServices,
+  fetchRealMetrics,
+  fetchRealIncidents,
+  fetchAnomalyLogs,
+  type BackendService,
+  type ServiceMetrics,
+  type BackendIncident,
+  type AnomalyLog,
+} from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -43,40 +41,37 @@ export default function ServiceDetailPage() {
   const params = useParams();
   const serviceId = params.id as string;
 
-  const [service, setService] = useState<Service | null>(null);
-  const [metrics, setMetrics] = useState<{ latency: TimeSeriesData; errorRate: TimeSeriesData; successRate: TimeSeriesData } | null>(null);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [prs, setPrs] = useState<PullRequest[]>([]);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [service, setService] = useState<BackendService | null>(null);
+  const [metrics, setMetrics] = useState<ServiceMetrics | null>(null);
+  const [incidents, setIncidents] = useState<BackendIncident[]>([]);
+  const [anomalyLogs, setAnomalyLogs] = useState<AnomalyLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "logs" | "incidents" | "fixes">("overview");
-  const [logFilter, setLogFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"overview" | "incidents" | "fixes" | "anomaly-logs">("overview");
 
   useEffect(() => {
     async function load() {
-      const [svc, m, inc, pr, lg] = await Promise.all([
-        fetchService(serviceId),
-        fetchServiceMetrics(serviceId),
-        fetchIncidentsByService(serviceId),
-        fetchPullRequestsByService(serviceId),
-        fetchServiceLogs(serviceId),
-      ]);
-      setService(svc ?? null);
-      setMetrics(m);
-      setIncidents(inc);
-      setPrs(pr);
-      setLogs(lg);
+      try {
+        const [allServices, m, inc, logs] = await Promise.all([
+          fetchRealServices(),
+          fetchRealMetrics(serviceId),
+          fetchRealIncidents(serviceId),
+          fetchAnomalyLogs(serviceId),
+        ]);
+        const svc = allServices.find((s) => s.id === serviceId) ?? null;
+        setService(svc);
+        setMetrics(m);
+        setIncidents(inc);
+        setAnomalyLogs(logs);
+      } catch {
+        // leave nulls
+      }
       setLoading(false);
     }
     load();
   }, [serviceId]);
 
-  const filteredLogs = logFilter === "all"
-    ? logs
-    : logs.filter((l) => l.level === logFilter);
-
-  const prepareChartData = (ts: TimeSeriesData) =>
-    ts.data
+  const prepareChartData = (ts: { timestamp: string; value: number }[]) =>
+    ts
       .filter((_, i) => i % 8 === 0)
       .slice(-30)
       .map((p) => ({
@@ -110,18 +105,21 @@ export default function ServiceDetailPage() {
     );
   }
 
+  const prsWithUrl = incidents.filter((i) => i.prUrl);
+  const svcStatus = metrics?.status ?? "unknown";
+
   const tabs = [
     { id: "overview" as const, label: "Overview" },
-    { id: "logs" as const, label: "Logs" },
     { id: "incidents" as const, label: `Incidents (${incidents.length})` },
-    { id: "fixes" as const, label: `Fixes (${prs.length})` },
+    { id: "fixes" as const, label: `Fixes (${prsWithUrl.length})` },
+    { id: "anomaly-logs" as const, label: `Anomaly Logs (${anomalyLogs.length})` },
   ];
 
   return (
     <>
       <TopBar
         title={service.name}
-        subtitle={service.endpoint}
+        subtitle={service.url_server}
       />
 
       <div className="p-6">
@@ -145,34 +143,30 @@ export default function ServiceDetailPage() {
                   <Badge
                     className="border-transparent text-xs"
                     style={{
-                      color: statusColors[service.status],
-                      backgroundColor: `${statusColors[service.status]}15`,
+                      color: statusColors[svcStatus],
+                      backgroundColor: `${statusColors[svcStatus]}15`,
                     }}
                   >
                     <span
                       className="mr-1.5 h-2 w-2 rounded-full animate-pulse"
-                      style={{ backgroundColor: statusColors[service.status] }}
+                      style={{ backgroundColor: statusColors[svcStatus] }}
                     />
-                    {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
+                    {svcStatus.charAt(0).toUpperCase() + svcStatus.slice(1)}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-[hsl(220,10%,45%)]">{service.description}</p>
+                <p className="mt-1 text-sm text-[hsl(220,10%,45%)]">{service.url_server}</p>
               </div>
             </div>
 
             {/* Quick Stats */}
             <div className="hidden gap-6 lg:flex">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{service.uptime}%</p>
+                <p className="text-2xl font-bold text-white">{metrics?.uptime?.toFixed(1) ?? "—"}%</p>
                 <p className="text-[10px] text-[hsl(220,10%,45%)]">Uptime</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{service.avgLatency}ms</p>
+                <p className="text-2xl font-bold text-white">{metrics?.avgLatency ?? "—"}ms</p>
                 <p className="text-[10px] text-[hsl(220,10%,45%)]">Latency</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">{service.errorRate}%</p>
-                <p className="text-[10px] text-[hsl(220,10%,45%)]">Error Rate</p>
               </div>
             </div>
           </div>
@@ -202,28 +196,26 @@ export default function ServiceDetailPage() {
           </div>
 
           {/* Tab Content */}
-          {activeTab === "overview" && metrics && (
+          {activeTab === "overview" && (
             <div className="space-y-6">
               {/* Charts Grid */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <ChartPanel
-                  title="Latency"
-                  unit="ms"
-                  data={prepareChartData(metrics.latency)}
-                  color={metrics.latency.color}
-                />
-                <ChartPanel
-                  title="Error Rate"
-                  unit="%"
-                  data={prepareChartData(metrics.errorRate)}
-                  color="hsl(0, 72%, 55%)"
-                />
-                <ChartPanel
-                  title="Success Rate"
-                  unit="%"
-                  data={prepareChartData(metrics.successRate)}
-                  color="hsl(142, 71%, 50%)"
-                />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {metrics?.timeSeries?.latency && metrics.timeSeries.latency.length > 0 && (
+                  <ChartPanel
+                    title="Latency"
+                    unit="ms"
+                    data={prepareChartData(metrics.timeSeries.latency)}
+                    color="hsl(199, 89%, 55%)"
+                  />
+                )}
+                {metrics?.timeSeries?.uptime && metrics.timeSeries.uptime.length > 0 && (
+                  <ChartPanel
+                    title="Uptime"
+                    unit="%"
+                    data={prepareChartData(metrics.timeSeries.uptime)}
+                    color="hsl(142, 71%, 50%)"
+                  />
+                )}
               </div>
 
               {/* AI Analysis */}
@@ -269,44 +261,6 @@ export default function ServiceDetailPage() {
             </div>
           )}
 
-          {activeTab === "logs" && (
-            <div className="space-y-4">
-              {/* Log Filters */}
-              <div className="flex items-center gap-2">
-                <IconFilter className="h-4 w-4 text-[hsl(220,10%,45%)]" />
-                {["all", "info", "warn", "error", "debug"].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setLogFilter(level)}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                      logFilter === level
-                        ? "bg-[hsl(220,14%,16%)] text-white"
-                        : "text-[hsl(220,10%,45%)] hover:text-white"
-                    }`}
-                  >
-                    {level.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Log List */}
-              <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,9%)] overflow-hidden">
-                {filteredLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-3 border-b border-[hsl(220,14%,14%)] px-4 py-2.5 font-mono text-xs last:border-0 hover:bg-[hsl(220,14%,11%)]"
-                  >
-                    <span className="shrink-0 text-[hsl(220,10%,35%)] w-[140px]">
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </span>
-                    <LogLevelBadge level={log.level} />
-                    <span className="text-[hsl(220,10%,70%)]">{log.message}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeTab === "incidents" && (
             <div className="space-y-4">
               {incidents.length === 0 ? (
@@ -324,13 +278,26 @@ export default function ServiceDetailPage() {
 
           {activeTab === "fixes" && (
             <div className="space-y-4">
-              {prs.length === 0 ? (
+              {prsWithUrl.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-[hsl(220,10%,45%)]">
                   <IconGitPullRequest className="mb-2 h-10 w-10 opacity-30" />
                   <p className="text-sm text-white">No fixes generated yet</p>
                 </div>
               ) : (
-                prs.map((pr) => <PRCard key={pr.id} pr={pr} />)
+                prsWithUrl.map((inc) => <FixCard key={inc.id} incident={inc} />)
+              )}
+            </div>
+          )}
+
+          {activeTab === "anomaly-logs" && (
+            <div className="space-y-3">
+              {anomalyLogs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-[hsl(220,10%,45%)]">
+                  <IconAlertTriangle className="mb-2 h-10 w-10 opacity-30" />
+                  <p className="text-sm text-white">No anomaly logs yet</p>
+                </div>
+              ) : (
+                anomalyLogs.map((log) => <AnomalyLogCard key={log.id} log={log} />)
               )}
             </div>
           )}
@@ -400,25 +367,7 @@ function ChartPanel({
   );
 }
 
-function LogLevelBadge({ level }: { level: string }) {
-  const config: Record<string, { color: string; bg: string }> = {
-    info: { color: "hsl(199, 89%, 55%)", bg: "hsl(199, 89%, 48%)" },
-    warn: { color: "hsl(38, 92%, 55%)", bg: "hsl(38, 92%, 50%)" },
-    error: { color: "hsl(0, 72%, 60%)", bg: "hsl(0, 72%, 51%)" },
-    debug: { color: "hsl(220, 10%, 55%)", bg: "hsl(220, 10%, 45%)" },
-  };
-  const c = config[level] || config.debug;
-  return (
-    <span
-      className="inline-flex w-[52px] shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-      style={{ color: c.color, backgroundColor: `${c.bg}15` }}
-    >
-      {level}
-    </span>
-  );
-}
-
-function IncidentCard({ incident }: { incident: Incident }) {
+function IncidentCard({ incident }: { incident: BackendIncident }) {
   const severityColors: Record<string, string> = {
     low: "hsl(199, 89%, 55%)",
     medium: "hsl(38, 92%, 55%)",
@@ -474,72 +423,106 @@ function IncidentCard({ incident }: { incident: Incident }) {
   );
 }
 
-function PRCard({ pr }: { pr: PullRequest }) {
-  const statusColors: Record<string, string> = {
-    pending: "hsl(38, 92%, 55%)",
-    merged: "hsl(142, 71%, 55%)",
-    failed: "hsl(0, 72%, 60%)",
-    reviewing: "hsl(265, 90%, 70%)",
-  };
+function FixCard({ incident }: { incident: BackendIncident }) {
+  const statusColor =
+    incident.status === "resolved"
+      ? "hsl(142, 71%, 55%)"
+      : incident.status === "failed"
+        ? "hsl(0, 72%, 60%)"
+        : "hsl(265, 90%, 70%)";
 
   return (
     <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
-          <IconGitPullRequest
-            className="mt-0.5 h-5 w-5 shrink-0"
-            style={{ color: statusColors[pr.status] }}
-          />
+          <IconGitPullRequest className="mt-0.5 h-5 w-5 shrink-0" style={{ color: statusColor }} />
           <div>
-            <h4 className="text-sm font-semibold text-white">{pr.title}</h4>
-            <p className="mt-1 text-xs text-[hsl(220,10%,55%)]">{pr.description}</p>
+            <h4 className="text-sm font-semibold text-white">{incident.title}</h4>
+            {incident.patchedAt && (
+              <p className="mt-0.5 text-[10px] text-[hsl(220,10%,40%)]">
+                Patched {new Date(incident.patchedAt).toLocaleString()}
+                {incident.patchModel && ` · ${incident.patchModel}`}
+              </p>
+            )}
           </div>
         </div>
-        <Badge
-          className="border-transparent text-[10px] shrink-0"
-          style={{
-            color: statusColors[pr.status],
-            backgroundColor: `${statusColors[pr.status]}15`,
-          }}
-        >
-          {pr.status}
+        <Badge className="border-transparent text-[10px] shrink-0" style={{ color: statusColor, backgroundColor: `${statusColor}15` }}>
+          {incident.status}
         </Badge>
       </div>
 
-      {/* Diff Preview */}
-      <div className="mt-4 overflow-hidden rounded-lg border border-[hsl(220,14%,16%)] bg-[hsl(222,14%,7%)]">
-        <div className="border-b border-[hsl(220,14%,14%)] px-3 py-1.5 text-[10px] text-[hsl(220,10%,45%)]">
-          {pr.filesChanged} files · +{pr.additions} / -{pr.deletions}
+      {incident.patchAnalysis && (
+        <div className="mt-3 rounded-lg border border-[hsl(265,90%,65%)/15%] bg-[hsl(265,90%,65%)/5%] p-3">
+          <div className="mb-1 flex items-center gap-1.5">
+            <IconBrain className="h-3.5 w-3.5 text-[hsl(265,90%,70%)]" />
+            <span className="text-[10px] font-semibold text-[hsl(265,90%,75%)]">Patch Analysis</span>
+          </div>
+          <p className="text-xs leading-relaxed text-[hsl(220,10%,70%)]">{incident.patchAnalysis}</p>
         </div>
-        <pre className="max-h-[200px] overflow-auto p-0 text-xs">
-          {pr.diff.split("\n").map((line, i) => (
-            <div
-              key={i}
-              className={`diff-line ${
-                line.startsWith("+") && !line.startsWith("+++")
-                  ? "diff-add"
-                  : line.startsWith("-") && !line.startsWith("---")
-                    ? "diff-remove"
-                    : ""
-              }`}
-            >
-              {line}
-            </div>
-          ))}
-        </pre>
-      </div>
+      )}
 
-      <div className="mt-3 flex items-center gap-3">
-        <a
-          href={pr.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] hover:underline"
-        >
-          <IconExternalLink className="h-3 w-3" />
-          View on GitHub
-        </a>
+      {incident.patches && incident.patches.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase text-[hsl(220,10%,40%)]">
+            Files Changed ({incident.patches.length})
+          </p>
+          <div className="space-y-1">
+            {incident.patches.map((p, i) => (
+              <div key={i} className="rounded-md bg-[hsl(220,14%,10%)] px-3 py-2">
+                <p className="font-mono text-[11px] text-[hsl(199,89%,60%)]">{p.filePath}</p>
+                <p className="mt-0.5 text-[10px] text-[hsl(220,10%,50%)]">{p.rationale}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {incident.prUrl && (
+        <div className="mt-3">
+          <a href={incident.prUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] hover:underline">
+            <IconExternalLink className="h-3 w-3" />
+            View Pull Request on GitHub
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnomalyLogCard({ log }: { log: AnomalyLog }) {
+  const metricColors: Record<string, string> = {
+    probe_success: "hsl(0, 72%, 55%)",
+    probe_duration_seconds: "hsl(38, 92%, 55%)",
+    probe_http_status_code: "hsl(199, 89%, 55%)",
+  };
+  const color = metricColors[log.metric] ?? "hsl(265, 90%, 70%)";
+  const stats = log.raw_data?.stats;
+
+  return (
+    <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="font-mono text-xs text-white">{log.metric}</span>
+          {log.value !== null && (
+            <span className="text-[11px] text-[hsl(220,10%,50%)]">
+              = {log.metric === "probe_duration_seconds" ? `${(log.value * 1000).toFixed(0)}ms` : log.value}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] text-[hsl(220,10%,40%)]">
+          {new Date(log.createdAt).toLocaleString()}
+        </span>
       </div>
+      {stats && (
+        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[hsl(220,10%,50%)]">
+          {stats.mean !== undefined && <span>mean: {(stats.mean * 1000).toFixed(0)}ms</span>}
+          {stats.stddev !== undefined && <span>σ: {(stats.stddev * 1000).toFixed(0)}ms</span>}
+          {stats.zScore !== undefined && <span>z-score: {stats.zScore.toFixed(2)}σ</span>}
+          {stats.latestValue !== undefined && <span>latest: {(stats.latestValue * 1000).toFixed(0)}ms</span>}
+        </div>
+      )}
     </div>
   );
 }
