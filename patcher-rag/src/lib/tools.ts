@@ -61,6 +61,15 @@ export async function gitEnsureBranch(branch: string, repoDir: string): Promise<
   }
 }
 
+// Git identity passed via environment variables — no global config needed in Docker
+const gitEnv = () => ({
+  ...process.env,
+  GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME ?? "AI SRE Patcher",
+  GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL ?? "sre-patcher@ai-sre.local",
+  GIT_COMMITTER_NAME: process.env.GIT_COMMITTER_NAME ?? "AI SRE Patcher",
+  GIT_COMMITTER_EMAIL: process.env.GIT_COMMITTER_EMAIL ?? "sre-patcher@ai-sre.local",
+});
+
 export async function gitCommit(
   filePaths: string[],
   message: string,
@@ -70,7 +79,10 @@ export async function gitCommit(
     for (const fp of filePaths) {
       await execAsync(`git add "${fp}"`, { cwd: repoDir });
     }
-    const { stdout } = await execAsync(`git commit -m "${message}"`, { cwd: repoDir });
+    const { stdout } = await execAsync(`git commit -m "${message}"`, {
+      cwd: repoDir,
+      env: gitEnv(),
+    });
     return { success: true, message: stdout.trim() };
   } catch (error) {
     return { success: false, message: String(error) };
@@ -106,6 +118,15 @@ export async function gitCurrentBranch(repoDir: string): Promise<string> {
 
 export async function pushBranch(branch: string, repoDir: string): Promise<GitResult> {
   try {
+    // Re-inject the token into the remote URL before every push.
+    // Git strips credentials from stored remote URLs for security, so
+    // the token used during `git clone` is not automatically reused.
+    const token = process.env.GITHUB_TOKEN;
+    if (token) {
+      const { stdout } = await execAsync("git remote get-url origin", { cwd: repoDir });
+      const authedUrl = stdout.trim().replace(/^https:\/\/([^@]+@)?/, `https://${token}@`);
+      await execAsync(`git remote set-url origin "${authedUrl}"`, { cwd: repoDir });
+    }
     await execAsync(`git push -u origin "${branch}"`, { cwd: repoDir });
     return { success: true, message: "Pushed" };
   } catch (error) {
@@ -128,20 +149,44 @@ export async function createGitHubPR(opts: {
   body: string;
   repoDir: string;
 }): Promise<PRResult> {
-  try {
-    const pushResult = await pushBranch(opts.branch, opts.repoDir);
-    if (!pushResult.success) return { success: false, error: `Push failed: ${pushResult.message}` };
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return { success: false, error: "GITHUB_TOKEN not set" };
 
-    const title = opts.title.replace(/"/g, '\\"');
-    const body = opts.body.replace(/"/g, '\\"');
-    const { stdout } = await execAsync(
-      `gh pr create --title "${title}" --body "${body}" --base "${opts.baseBranch}" --head "${opts.branch}"`,
-      { cwd: opts.repoDir },
-    );
-    return { success: true, url: stdout.trim() };
-  } catch (error) {
-    return { success: false, error: String(error) };
+  // 1. Push the branch (injects token into remote URL)
+  const pushResult = await pushBranch(opts.branch, opts.repoDir);
+  if (!pushResult.success) return { success: false, error: `Push failed: ${pushResult.message}` };
+
+  // 2. Parse owner/repo from remote URL
+  const { stdout } = await execAsync("git remote get-url origin", { cwd: opts.repoDir });
+  const remote = stdout.trim().replace(/^https:\/\/[^@]+@/, "https://"); // strip credentials
+  const match = remote.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
+  if (!match) return { success: false, error: `Cannot parse GitHub repo from: ${remote}` };
+  const [, owner, repo] = match;
+
+  // 3. Create PR via GitHub REST API (no gh CLI needed)
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify({
+      title: opts.title,
+      body: opts.body,
+      head: opts.branch,
+      base: opts.baseBranch,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    return { success: false, error: `GitHub API ${response.status}: ${err}` };
   }
+
+  const data = (await response.json()) as { html_url: string };
+  return { success: true, url: data.html_url };
 }
 
 // ─── File operations ──────────────────────────────────────────────────────────

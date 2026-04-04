@@ -19,7 +19,8 @@ import {
   log,
 } from "./lib/tools.js";
 
-const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL ?? "http://localhost:6969/health";
+const HEALTH_CHECK_URL =
+  process.env.HEALTH_CHECK_URL ?? "http://localhost:6969/health";
 const PORT = Number(process.env.PATCHER_PORT ?? 4000);
 const CLONE_BASE = process.env.CLONE_BASE ?? "/tmp/patcher";
 
@@ -41,18 +42,28 @@ let ready = false;
 //  9. Cleanup temp clone
 //
 async function processIncident(incidentId: string): Promise<void> {
-  if (!patcher) { log("not_ready", incidentId); return; }
+  if (!patcher) {
+    log("not_ready", incidentId);
+    return;
+  }
 
   // ── Fetch incident ──────────────────────────────────────────────────────────
-  const incident = await prisma.incident.findUnique({ where: { id: incidentId } });
-  if (!incident) { log("incident_not_found", incidentId); return; }
+  const incident = await prisma.incident.findUnique({
+    where: { id: incidentId },
+  });
+  if (!incident) {
+    log("incident_not_found", incidentId);
+    return;
+  }
   if (incident.patchStatus !== "PENDING") {
     log(`skipping status=${incident.patchStatus}`, incidentId);
     return;
   }
 
   // Fetch service separately — avoids crash on broken MongoDB reference
-  const service = await prisma.service.findUnique({ where: { id: incident.serviceId } });
+  const service = await prisma.service.findUnique({
+    where: { id: incident.serviceId },
+  });
   const serviceName = service?.name ?? "unknown";
   const repoUrl = service?.url_codebase;
 
@@ -65,7 +76,10 @@ async function processIncident(incidentId: string): Promise<void> {
     return;
   }
 
-  await prisma.incident.update({ where: { id: incidentId }, data: { patchStatus: "PROCESSING" } });
+  await prisma.incident.update({
+    where: { id: incidentId },
+    data: { patchStatus: "PROCESSING" },
+  });
 
   const details = incident.details as Record<string, unknown> | null;
   const incidentReport = {
@@ -124,7 +138,7 @@ async function processIncident(incidentId: string): Promise<void> {
     // ── 5. Create patch branch ────────────────────────────────────────────────
     const baseBranch = await gitCurrentBranch(cloneDir);
     const patchBranch = `patch/${incidentId}`;
-    if (!await gitEnsureBranch(patchBranch, cloneDir)) {
+    if (!(await gitEnsureBranch(patchBranch, cloneDir))) {
       await finish(incidentId, "failed", "Failed to create git branch");
       return;
     }
@@ -146,7 +160,11 @@ async function processIncident(incidentId: string): Promise<void> {
       }
 
       log(`Patching ${patch.filePath}`, incidentId);
-      const result = await replaceInFile(targetPath, patch.search, patch.replace);
+      const result = await replaceInFile(
+        targetPath,
+        patch.search,
+        patch.replace,
+      );
       if (!result.success) {
         log(`replaceInFile failed: ${result.error}`, incidentId);
         await revertAll(appliedFiles, cloneDir, incidentId);
@@ -162,7 +180,8 @@ async function processIncident(incidentId: string): Promise<void> {
       `fix(patcher): resolve ${incident.type} incident ${incidentId}`,
       cloneDir,
     );
-    if (!commitResult.success) log(`git commit warning: ${commitResult.message}`, incidentId);
+    if (!commitResult.success)
+      log(`git commit warning: ${commitResult.message}`, incidentId);
 
     // ── 8. Health check (best-effort, doesn't block the PR) ──────────────────
     const healthy = await healthCheck(HEALTH_CHECK_URL);
@@ -181,7 +200,9 @@ async function processIncident(incidentId: string): Promise<void> {
         `**Suggested Action:** ${(details?.suggested_action as string) ?? "N/A"}`,
         "",
         "**Files patched:**",
-        appliedFiles.map((f) => `- \`${path.relative(cloneDir, f)}\``).join("\n"),
+        appliedFiles
+          .map((f) => `- \`${path.relative(cloneDir, f)}\``)
+          .join("\n"),
         "",
         `**Model:** ${MODEL}`,
         `**Health check:** ${healthy ? "passed ✓" : "skipped / failed ✗"}`,
@@ -205,7 +226,11 @@ async function processIncident(incidentId: string): Promise<void> {
   }
 }
 
-async function revertAll(files: string[], repoDir: string, incidentId: string): Promise<void> {
+async function revertAll(
+  files: string[],
+  repoDir: string,
+  incidentId: string,
+): Promise<void> {
   if (!files.length) return;
   const history = await gitLog(repoDir, 2);
   const prevCommit = history.split("\n")[1]?.split(" ")[0];
@@ -232,7 +257,7 @@ async function initializeWithRetry(apiKey: string): Promise<void> {
       log("Connecting to ChromaDB Cloud...");
       // Probe connectivity by creating a throwaway VectorStore
       const probe = new VectorStore();
-      await probe.init("_health_probe");
+      await probe.init("healthprobe");
       patcher = new Patcher(apiKey);
       ready = true;
       log("Service fully initialized and ready");
@@ -243,7 +268,10 @@ async function initializeWithRetry(apiKey: string): Promise<void> {
         select: { id: true },
       });
       for (const { id } of stuck) {
-        await prisma.incident.update({ where: { id }, data: { patchStatus: "PENDING" } });
+        await prisma.incident.update({
+          where: { id },
+          data: { patchStatus: "PENDING" },
+        });
       }
       if (stuck.length) log(`Reset ${stuck.length} stuck incidents to PENDING`);
       break;
@@ -258,7 +286,10 @@ async function initializeWithRetry(apiKey: string): Promise<void> {
 
 async function main() {
   const apiKey = process.env.CEREBRAS_API_KEY;
-  if (!apiKey) { console.error("CEREBRAS_API_KEY not set"); process.exit(1); }
+  if (!apiKey) {
+    console.error("CEREBRAS_API_KEY not set");
+    process.exit(1);
+  }
 
   // Bind port immediately — Docker healthcheck needs this
   Bun.serve({
@@ -272,22 +303,38 @@ async function main() {
       },
       "/trigger": {
         POST: async (req: Request) => {
-          if (!ready) return new Response("Service starting, retry shortly", { status: 503 });
+          if (!ready)
+            return new Response("Service starting, retry shortly", {
+              status: 503,
+            });
           let body: { incidentId?: string };
-          try { body = (await req.json()) as { incidentId?: string }; }
-          catch { return new Response("Bad JSON", { status: 400 }); }
+          try {
+            body = (await req.json()) as { incidentId?: string };
+          } catch {
+            return new Response("Bad JSON", { status: 400 });
+          }
           const { incidentId } = body;
-          if (!incidentId) return new Response("incidentId required", { status: 400 });
+          if (!incidentId)
+            return new Response("incidentId required", { status: 400 });
           log(`Trigger received`, incidentId);
-          processIncident(incidentId).catch((err) => log(`error=${err}`, incidentId));
+          processIncident(incidentId).catch((err) =>
+            log(`error=${err}`, incidentId),
+          );
           return Response.json({ queued: true, incidentId });
         },
       },
       "/retry/:id": {
         POST: async (req: Request) => {
-          const incidentId = (req as Request & { params: Record<string, string> }).params["id"]!;
-          await prisma.incident.update({ where: { id: incidentId }, data: { patchStatus: "PENDING" } });
-          processIncident(incidentId).catch((err) => log(`retry_error=${err}`, incidentId));
+          const incidentId = (
+            req as Request & { params: Record<string, string> }
+          ).params["id"]!;
+          await prisma.incident.update({
+            where: { id: incidentId },
+            data: { patchStatus: "PENDING" },
+          });
+          processIncident(incidentId).catch((err) =>
+            log(`retry_error=${err}`, incidentId),
+          );
           return Response.json({ retrying: true, incidentId });
         },
       },
