@@ -13,7 +13,7 @@ export default function DashboardLayout({
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#0e0e0e' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#09090b' }}>
       <Sidebar />
       <CommandPalette />
       <motion.main

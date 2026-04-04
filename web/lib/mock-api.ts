@@ -1,5 +1,5 @@
 // ============================================================
-// AutoHeal – Mock API (simulates backend calls)
+// OpSmith – Mock API (simulates backend calls)
 // ============================================================
 
 import {

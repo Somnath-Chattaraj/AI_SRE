@@ -31,10 +31,10 @@ import {
 } from "recharts";
 
 const statusColors: Record<string, string> = {
-  healthy: "hsl(142, 71%, 45%)",
-  warning: "hsl(38, 92%, 50%)",
-  critical: "hsl(0, 72%, 51%)",
-  unknown: "hsl(220, 10%, 45%)",
+  healthy: "#34d399",
+  warning: "#fbbf24",
+  critical: "#f87171",
+  unknown: "#52525b",
 };
 
 export default function ServiceDetailPage() {
@@ -84,8 +84,8 @@ export default function ServiceDetailPage() {
       <>
         <TopBar title="Loading..." />
         <div className="p-6 space-y-6">
-          <Skeleton className="h-[200px] rounded-xl bg-[hsl(225,15%,12%)]" />
-          <Skeleton className="h-[300px] rounded-xl bg-[hsl(225,15%,12%)]" />
+          <Skeleton className="h-[200px] rounded-xl bg-[#18181b]" />
+          <Skeleton className="h-[300px] rounded-xl bg-[#18181b]" />
         </div>
       </>
     );
@@ -97,8 +97,8 @@ export default function ServiceDetailPage() {
         <TopBar title="Service Not Found" />
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-lg text-white">Service not found</p>
-          <Link href="/dashboard/services" className="mt-4 text-sm text-[hsl(265,90%,70%)] hover:underline">
-            ← Back to services
+          <Link href="/dashboard/services" className="mt-4 text-sm text-[#818cf8] hover:underline">
+            Back to services
           </Link>
         </div>
       </>
@@ -117,10 +117,7 @@ export default function ServiceDetailPage() {
 
   return (
     <>
-      <TopBar
-        title={service.name}
-        subtitle={service.url_server}
-      />
+      <TopBar title={service.name} subtitle={service.url_server} />
 
       <div className="p-6">
         <motion.div
@@ -133,7 +130,8 @@ export default function ServiceDetailPage() {
             <div className="flex items-center gap-4">
               <Link
                 href="/dashboard/services"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[hsl(220,14%,18%)] bg-[hsl(220,14%,12%)] text-[hsl(220,10%,55%)] transition-colors hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#18181b] text-[#71717a] transition-colors hover:text-white"
+                style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
               >
                 <IconArrowLeft className="h-4 w-4" />
               </Link>
@@ -154,25 +152,24 @@ export default function ServiceDetailPage() {
                     {svcStatus.charAt(0).toUpperCase() + svcStatus.slice(1)}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-[hsl(220,10%,45%)]">{service.url_server}</p>
+                <p className="mt-1 text-sm text-[#52525b]">{service.url_server}</p>
               </div>
             </div>
 
-            {/* Quick Stats */}
             <div className="hidden gap-6 lg:flex">
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{metrics?.uptime?.toFixed(1) ?? "—"}%</p>
-                <p className="text-[10px] text-[hsl(220,10%,45%)]">Uptime</p>
+                <p className="text-[10px] text-[#52525b]">Uptime</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{metrics?.avgLatency ?? "—"}ms</p>
-                <p className="text-[10px] text-[hsl(220,10%,45%)]">Latency</p>
+                <p className="text-[10px] text-[#52525b]">Latency</p>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 rounded-lg border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,9%)] p-1">
+          <div className="flex gap-1 rounded-lg bg-[#0c0c0e] p-1" style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -180,13 +177,13 @@ export default function ServiceDetailPage() {
                 className={`relative rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? "text-white"
-                    : "text-[hsl(220,10%,50%)] hover:text-white"
+                    : "text-[#52525b] hover:text-white"
                 }`}
               >
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="service-tab"
-                    className="absolute inset-0 rounded-md bg-[hsl(220,14%,14%)]"
+                    className="absolute inset-0 rounded-md bg-[#18181b]"
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
@@ -198,14 +195,13 @@ export default function ServiceDetailPage() {
           {/* Tab Content */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Charts Grid */}
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {metrics?.timeSeries?.latency && metrics.timeSeries.latency.length > 0 && (
                   <ChartPanel
                     title="Latency"
                     unit="ms"
                     data={prepareChartData(metrics.timeSeries.latency)}
-                    color="hsl(199, 89%, 55%)"
+                    color="#818cf8"
                   />
                 )}
                 {metrics?.timeSeries?.uptime && metrics.timeSeries.uptime.length > 0 && (
@@ -213,45 +209,37 @@ export default function ServiceDetailPage() {
                     title="Uptime"
                     unit="%"
                     data={prepareChartData(metrics.timeSeries.uptime)}
-                    color="hsl(142, 71%, 50%)"
+                    color="#34d399"
                   />
                 )}
               </div>
 
-              {/* AI Analysis */}
               {incidents.length > 0 && (
-                <div className="rounded-xl border border-[hsl(265,90%,65%)/20%] bg-[hsl(265,90%,65%)/5%] p-5">
+                <div className="rounded-xl p-5" style={{ background: 'rgba(129, 140, 248, 0.05)', border: '1px solid rgba(129, 140, 248, 0.12)' }}>
                   <div className="mb-4 flex items-center gap-2">
-                    <IconBrain className="h-5 w-5 text-[hsl(265,90%,70%)]" />
+                    <IconBrain className="h-5 w-5 text-[#818cf8]" />
                     <h3 className="text-sm font-semibold text-white">AI Analysis</h3>
-                    <Badge className="bg-[hsl(265,90%,65%)/15%] text-[hsl(265,90%,75%)] border-transparent text-[10px]">
+                    <Badge className="bg-[#818cf8]/10 text-[#a5b4fc] border-transparent text-[10px]">
                       <IconSparkles className="mr-1 h-3 w-3" />
                       Live
                     </Badge>
                   </div>
                   {incidents.filter((i) => i.aiAnalysis).slice(0, 1).map((inc) => (
                     <div key={inc.id} className="space-y-3">
-                      <p className="text-sm leading-relaxed text-[hsl(220,10%,75%)]">
-                        {inc.aiAnalysis}
-                      </p>
+                      <p className="text-sm leading-relaxed text-[#a1a1aa]">{inc.aiAnalysis}</p>
                       {inc.rootCause && (
-                        <div className="rounded-lg bg-[hsl(220,14%,10%)] p-3">
-                          <p className="text-[10px] font-semibold uppercase text-[hsl(0,72%,60%)]">Root Cause</p>
-                          <p className="mt-1 font-mono text-xs text-[hsl(220,10%,70%)]">{inc.rootCause}</p>
+                        <div className="rounded-lg bg-[#09090b] p-3">
+                          <p className="text-[10px] font-semibold uppercase text-[#f87171]">Root Cause</p>
+                          <p className="mt-1 font-mono text-xs text-[#a1a1aa]">{inc.rootCause}</p>
                         </div>
                       )}
                       {inc.confidence && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-[hsl(220,10%,50%)]">Confidence:</span>
-                          <div className="h-1.5 w-24 rounded-full bg-[hsl(220,14%,16%)]">
-                            <div
-                              className="h-full rounded-full bg-[hsl(265,90%,65%)]"
-                              style={{ width: `${inc.confidence}%` }}
-                            />
+                          <span className="text-xs text-[#52525b]">Confidence:</span>
+                          <div className="h-1.5 w-24 rounded-full bg-[#18181b]">
+                            <div className="h-full rounded-full bg-[#818cf8]" style={{ width: `${inc.confidence}%` }} />
                           </div>
-                          <span className="text-xs font-medium text-[hsl(265,90%,75%)]">
-                            {inc.confidence}%
-                          </span>
+                          <span className="text-xs font-medium text-[#a5b4fc]">{inc.confidence}%</span>
                         </div>
                       )}
                     </div>
@@ -264,14 +252,12 @@ export default function ServiceDetailPage() {
           {activeTab === "incidents" && (
             <div className="space-y-4">
               {incidents.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-[hsl(220,10%,45%)]">
-                  <IconCircleCheck className="mb-2 h-10 w-10 text-[hsl(142,71%,50%)]" />
+                <div className="flex flex-col items-center justify-center py-12 text-[#52525b]">
+                  <IconCircleCheck className="mb-2 h-10 w-10 text-[#34d399]" />
                   <p className="text-sm text-white">No incidents — all clear!</p>
                 </div>
               ) : (
-                incidents.map((inc) => (
-                  <IncidentCard key={inc.id} incident={inc} />
-                ))
+                incidents.map((inc) => <IncidentCard key={inc.id} incident={inc} />)
               )}
             </div>
           )}
@@ -279,7 +265,7 @@ export default function ServiceDetailPage() {
           {activeTab === "fixes" && (
             <div className="space-y-4">
               {prsWithUrl.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-[hsl(220,10%,45%)]">
+                <div className="flex flex-col items-center justify-center py-12 text-[#52525b]">
                   <IconGitPullRequest className="mb-2 h-10 w-10 opacity-30" />
                   <p className="text-sm text-white">No fixes generated yet</p>
                 </div>
@@ -292,7 +278,7 @@ export default function ServiceDetailPage() {
           {activeTab === "anomaly-logs" && (
             <div className="space-y-3">
               {anomalyLogs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-[hsl(220,10%,45%)]">
+                <div className="flex flex-col items-center justify-center py-12 text-[#52525b]">
                   <IconAlertTriangle className="mb-2 h-10 w-10 opacity-30" />
                   <p className="text-sm text-white">No anomaly logs yet</p>
                 </div>
@@ -307,60 +293,36 @@ export default function ServiceDetailPage() {
   );
 }
 
-// ─── Sub-components ──────────────────────────────────────────
-
 function ChartPanel({
-  title,
-  unit,
-  data,
-  color,
+  title, unit, data, color,
 }: {
-  title: string;
-  unit: string;
-  data: { time: string; value: number }[];
-  color: string;
+  title: string; unit: string; data: { time: string; value: number }[]; color: string;
 }) {
   return (
-    <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-4">
-      <h4 className="mb-3 text-xs font-semibold text-[hsl(220,10%,55%)]">{title}</h4>
+    <div className="rounded-xl bg-[#111113] p-4" style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+      <h4 className="mb-3 text-xs font-semibold text-[#71717a]">{title}</h4>
       <ResponsiveContainer width="100%" height={160}>
         <AreaChart data={data}>
           <defs>
             <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.2} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 16%)" vertical={false} />
-          <XAxis
-            dataKey="time"
-            tick={{ fill: "hsl(220, 10%, 40%)", fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fill: "hsl(220, 10%, 40%)", fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-            width={30}
-          />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.04)" vertical={false} />
+          <XAxis dataKey="time" tick={{ fill: "#52525b", fontSize: 9 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "#52525b", fontSize: 9 }} axisLine={false} tickLine={false} width={30} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "hsl(225, 18%, 12%)",
-              border: "1px solid hsl(220, 14%, 20%)",
+              backgroundColor: "#18181b",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "8px",
               fontSize: "11px",
               color: "white",
             }}
-            formatter={(v: any) => [`${v}${unit}`, title]}
+            formatter={(v: number | string) => [`${v}${unit}`, title]}
           />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke={color}
-            fill={`url(#grad-${title})`}
-            strokeWidth={2}
-          />
+          <Area type="monotone" dataKey="value" stroke={color} fill={`url(#grad-${title})`} strokeWidth={2} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -369,14 +331,14 @@ function ChartPanel({
 
 function IncidentCard({ incident }: { incident: BackendIncident }) {
   const severityColors: Record<string, string> = {
-    low: "hsl(199, 89%, 55%)",
-    medium: "hsl(38, 92%, 55%)",
-    high: "hsl(0, 72%, 60%)",
-    critical: "hsl(0, 72%, 51%)",
+    low: "#60a5fa",
+    medium: "#fbbf24",
+    high: "#f87171",
+    critical: "#ef4444",
   };
 
   return (
-    <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5">
+    <div className="rounded-xl bg-[#111113] p-5" style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}>
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <IconAlertTriangle
@@ -385,7 +347,7 @@ function IncidentCard({ incident }: { incident: BackendIncident }) {
           />
           <div>
             <h4 className="text-sm font-semibold text-white">{incident.title}</h4>
-            <p className="mt-1 text-xs text-[hsl(220,10%,55%)]">{incident.description}</p>
+            <p className="mt-1 text-xs text-[#71717a]">{incident.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -402,8 +364,8 @@ function IncidentCard({ incident }: { incident: BackendIncident }) {
             variant="outline"
             className={`text-[10px] ${
               incident.status === "resolved"
-                ? "border-[hsl(142,71%,45%)/30%] text-[hsl(142,71%,55%)]"
-                : "border-[hsl(38,92%,50%)/30%] text-[hsl(38,92%,55%)]"
+                ? "border-[#34d399]/20 text-[#34d399]"
+                : "border-[#fbbf24]/20 text-[#fbbf24]"
             }`}
           >
             {incident.status}
@@ -411,12 +373,12 @@ function IncidentCard({ incident }: { incident: BackendIncident }) {
         </div>
       </div>
       {incident.aiAnalysis && (
-        <div className="mt-4 rounded-lg border border-[hsl(265,90%,65%)/15%] bg-[hsl(265,90%,65%)/5%] p-3">
+        <div className="mt-4 rounded-lg p-3" style={{ background: 'rgba(129, 140, 248, 0.05)', border: '1px solid rgba(129, 140, 248, 0.1)' }}>
           <div className="flex items-center gap-1.5 mb-2">
-            <IconBrain className="h-3.5 w-3.5 text-[hsl(265,90%,70%)]" />
-            <span className="text-[10px] font-semibold text-[hsl(265,90%,75%)]">AI Analysis</span>
+            <IconBrain className="h-3.5 w-3.5 text-[#818cf8]" />
+            <span className="text-[10px] font-semibold text-[#a5b4fc]">AI Analysis</span>
           </div>
-          <p className="text-xs leading-relaxed text-[hsl(220,10%,70%)]">{incident.aiAnalysis}</p>
+          <p className="text-xs leading-relaxed text-[#a1a1aa]">{incident.aiAnalysis}</p>
         </div>
       )}
     </div>
@@ -425,21 +387,19 @@ function IncidentCard({ incident }: { incident: BackendIncident }) {
 
 function FixCard({ incident }: { incident: BackendIncident }) {
   const statusColor =
-    incident.status === "resolved"
-      ? "hsl(142, 71%, 55%)"
-      : incident.status === "failed"
-        ? "hsl(0, 72%, 60%)"
-        : "hsl(265, 90%, 70%)";
+    incident.status === "resolved" ? "#34d399"
+      : incident.status === "failed" ? "#f87171"
+      : "#818cf8";
 
   return (
-    <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5">
+    <div className="rounded-xl bg-[#111113] p-5" style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}>
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <IconGitPullRequest className="mt-0.5 h-5 w-5 shrink-0" style={{ color: statusColor }} />
           <div>
             <h4 className="text-sm font-semibold text-white">{incident.title}</h4>
             {incident.patchedAt && (
-              <p className="mt-0.5 text-[10px] text-[hsl(220,10%,40%)]">
+              <p className="mt-0.5 text-[10px] text-[#52525b]">
                 Patched {new Date(incident.patchedAt).toLocaleString()}
                 {incident.patchModel && ` · ${incident.patchModel}`}
               </p>
@@ -452,25 +412,25 @@ function FixCard({ incident }: { incident: BackendIncident }) {
       </div>
 
       {incident.patchAnalysis && (
-        <div className="mt-3 rounded-lg border border-[hsl(265,90%,65%)/15%] bg-[hsl(265,90%,65%)/5%] p-3">
+        <div className="mt-3 rounded-lg p-3" style={{ background: 'rgba(129, 140, 248, 0.05)', border: '1px solid rgba(129, 140, 248, 0.1)' }}>
           <div className="mb-1 flex items-center gap-1.5">
-            <IconBrain className="h-3.5 w-3.5 text-[hsl(265,90%,70%)]" />
-            <span className="text-[10px] font-semibold text-[hsl(265,90%,75%)]">Patch Analysis</span>
+            <IconBrain className="h-3.5 w-3.5 text-[#818cf8]" />
+            <span className="text-[10px] font-semibold text-[#a5b4fc]">Patch Analysis</span>
           </div>
-          <p className="text-xs leading-relaxed text-[hsl(220,10%,70%)]">{incident.patchAnalysis}</p>
+          <p className="text-xs leading-relaxed text-[#a1a1aa]">{incident.patchAnalysis}</p>
         </div>
       )}
 
       {incident.patches && incident.patches.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase text-[hsl(220,10%,40%)]">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase text-[#52525b]">
             Files Changed ({incident.patches.length})
           </p>
           <div className="space-y-1">
             {incident.patches.map((p, i) => (
-              <div key={i} className="rounded-md bg-[hsl(220,14%,10%)] px-3 py-2">
-                <p className="font-mono text-[11px] text-[hsl(199,89%,60%)]">{p.filePath}</p>
-                <p className="mt-0.5 text-[10px] text-[hsl(220,10%,50%)]">{p.rationale}</p>
+              <div key={i} className="rounded-md bg-[#0c0c0e] px-3 py-2">
+                <p className="font-mono text-[11px] text-[#60a5fa]">{p.filePath}</p>
+                <p className="mt-0.5 text-[10px] text-[#52525b]">{p.rationale}</p>
               </div>
             ))}
           </div>
@@ -480,7 +440,7 @@ function FixCard({ incident }: { incident: BackendIncident }) {
       {incident.prUrl && (
         <div className="mt-3">
           <a href={incident.prUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] hover:underline">
+            className="flex items-center gap-1 text-xs text-[#818cf8] hover:underline">
             <IconExternalLink className="h-3 w-3" />
             View Pull Request on GitHub
           </a>
@@ -492,31 +452,31 @@ function FixCard({ incident }: { incident: BackendIncident }) {
 
 function AnomalyLogCard({ log }: { log: AnomalyLog }) {
   const metricColors: Record<string, string> = {
-    probe_success: "hsl(0, 72%, 55%)",
-    probe_duration_seconds: "hsl(38, 92%, 55%)",
-    probe_http_status_code: "hsl(199, 89%, 55%)",
+    probe_success: "#f87171",
+    probe_duration_seconds: "#fbbf24",
+    probe_http_status_code: "#60a5fa",
   };
-  const color = metricColors[log.metric] ?? "hsl(265, 90%, 70%)";
+  const color = metricColors[log.metric] ?? "#818cf8";
   const stats = log.raw_data?.stats;
 
   return (
-    <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-4">
+    <div className="rounded-xl bg-[#111113] p-4" style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
           <span className="font-mono text-xs text-white">{log.metric}</span>
           {log.value !== null && (
-            <span className="text-[11px] text-[hsl(220,10%,50%)]">
+            <span className="text-[11px] text-[#52525b]">
               = {log.metric === "probe_duration_seconds" ? `${(log.value * 1000).toFixed(0)}ms` : log.value}
             </span>
           )}
         </div>
-        <span className="text-[10px] text-[hsl(220,10%,40%)]">
+        <span className="text-[10px] text-[#52525b]">
           {new Date(log.createdAt).toLocaleString()}
         </span>
       </div>
       {stats && (
-        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[hsl(220,10%,50%)]">
+        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[#71717a]">
           {stats.mean !== undefined && <span>mean: {(stats.mean * 1000).toFixed(0)}ms</span>}
           {stats.stddev !== undefined && <span>σ: {(stats.stddev * 1000).toFixed(0)}ms</span>}
           {stats.zScore !== undefined && <span>z-score: {stats.zScore.toFixed(2)}σ</span>}

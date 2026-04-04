@@ -1,5 +1,5 @@
 // ============================================================
-// AutoHeal – Global Store (Zustand)
+// OpSmith – Global Store (Zustand)
 // ============================================================
 
 import { create } from "zustand"

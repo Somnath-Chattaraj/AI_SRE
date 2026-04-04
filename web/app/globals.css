@@ -4,78 +4,72 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Kinetic Engineering Design Tokens ──────────────────── */
+/* ─── OpSmith Design System ─────────────────────────────── */
 :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 29 80% 50%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 29 20% 95%;
-    --accent-foreground: 29 80% 40%;
-    --destructive: 0 84.2% 60.2%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 29 80% 50%;
-    --radius: 0.375rem;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 239 84% 67%;
+    --radius: 0.5rem;
 }
 
 .dark {
-    --background: 0 0% 5.5%;        /* #0e0e0e */
-    --foreground: 30 3% 90%;        /* #e7e5e4 */
-    --card: 0 0% 7.5%;              /* #131313 */
-    --card-foreground: 30 3% 90%;
-    --popover: 0 0% 7.5%;
-    --popover-foreground: 30 3% 90%;
-    --primary: 29 100% 74%;         /* #ffb77b */
-    --primary-foreground: 25 100% 19%; /* #633400 */
-    --secondary: 20 6% 61%;         /* #a69c96 */
-    --secondary-foreground: 20 10% 12%;
-    --muted: 180 3% 10%;            /* #191a1a */
-    --muted-foreground: 0 0% 67%;   /* #acabaa */
-    --accent: 0 0% 12.5%;           /* #1f2020 */
-    --accent-foreground: 29 100% 74%;
-    --destructive: 12 78% 66%;      /* #ed7f64 */
-    --border: 0 0% 28%;             /* #484848 at ~15% via opacity */
-    --input: 0 0% 15%;
-    --ring: 29 100% 74%;
+    --background: 240 6% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 5% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 5% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 239 84% 67%;
 
-    /* ── Kinetic Engineering Surfaces ── */
-    --ke-surface: #0e0e0e;
-    --ke-surface-container-lowest: #000000;
-    --ke-surface-container-low: #131313;
-    --ke-surface-container: #191a1a;
-    --ke-surface-container-high: #1f2020;
-    --ke-surface-container-highest: #252626;
-    --ke-surface-bright: #2c2c2c;
+    /* ── OpSmith Surfaces ── */
+    --os-bg: #09090b;
+    --os-surface-1: #111113;
+    --os-surface-2: #18181b;
+    --os-surface-3: #1e1e22;
+    --os-surface-4: #27272a;
 
     /* ── Accents ── */
-    --ke-primary: #ffb77b;
-    --ke-primary-dim: #f6a762;
-    --ke-primary-container: #6d3a00;
-    --ke-on-surface: #e7e5e4;
-    --ke-on-surface-variant: #acabaa;
-    --ke-outline: #767575;
-    --ke-outline-variant: #484848;
-    --ke-error: #ed7f64;
-    --ke-error-container: #7e2b17;
-    --ke-secondary-dim: #a69c96;
-    --ke-secondary-container: #413a36;
-    --ke-on-secondary-container: #c8bdb7;
+    --os-primary: #818cf8;
+    --os-primary-dim: #6366f1;
+    --os-primary-muted: rgba(129, 140, 248, 0.12);
+    --os-on-surface: #fafafa;
+    --os-on-surface-secondary: #a1a1aa;
+    --os-on-surface-muted: #71717a;
+    --os-on-surface-faint: #52525b;
+    --os-border: rgba(255, 255, 255, 0.06);
+    --os-border-strong: rgba(255, 255, 255, 0.1);
 
     /* ── Status ── */
-    --ah-healthy: 142 70% 45%;
-    --ah-warning: 38 90% 50%;
-    --ah-critical: 0 70% 55%;
-    --ah-ai: 29 70% 50%;
-    --ah-ai-secondary: 29 50% 40%;
+    --os-success: #34d399;
+    --os-warning: #fbbf24;
+    --os-error: #f87171;
+    --os-info: #60a5fa;
 }
 
 @theme inline {
@@ -119,7 +113,48 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-}
+    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+    --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  @keyframes shimmer-slide {
+  to {
+    transform: translate(calc(100cqw - 100%), 0);
+        }
+    }
+  @keyframes spin-around {
+  0% {
+    transform: translateZ(0) rotate(0);
+        }
+  15%, 35% {
+    transform: translateZ(0) rotate(90deg);
+        }
+  65%, 85% {
+    transform: translateZ(0) rotate(270deg);
+        }
+  100% {
+    transform: translateZ(0) rotate(360deg);
+        }
+    }
+  --animate-gradient: gradient 8s linear infinite
+;
+  @keyframes gradient {
+  to {
+    background-position: var(--bg-size, 300%) 0;
+        }
+    }
+  --animate-meteor: meteor 5s linear infinite;
+  @keyframes meteor {
+  0% {
+    transform: rotate(var(--angle)) translateX(0);
+    opacity: 1;
+        }
+  70% {
+    opacity: 1;
+        }
+  100% {
+    transform: rotate(var(--angle)) translateX(-500px);
+    opacity: 0;
+        }
+    }}
 
 @layer base {
   * {
@@ -127,97 +162,124 @@
   }
   html {
     @apply font-sans scroll-smooth;
-    background-color: #0e0e0e;
+    background-color: #09090b;
   }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', var(--font-sans), sans-serif;
-    background-color: #0e0e0e;
-    color: #e7e5e4;
+    background-color: #09090b;
+    color: #fafafa;
     min-height: 100vh;
   }
 }
 
-/* ─── Kinetic Engineering Utilities ──────────────────────── */
+/* ─── OpSmith Utilities ─────────────────────────────────── */
 @layer utilities {
   .glass {
-    background: transparent;
-    border: 1px solid var(--border);
+    background: rgba(17, 17, 19, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
   .glass-strong {
-    background: var(--card);
-    border: 1px solid var(--border);
+    background: rgba(24, 24, 27, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
-
-  /* Glass panel — for floating overlays */
   .glass-panel {
-    backdrop-filter: blur(16px);
-    background: rgba(31, 32, 32, 0.7);
+    backdrop-filter: blur(20px);
+    background: rgba(17, 17, 19, 0.8);
   }
 
-  /* Copper gradient — primary CTAs */
-  .copper-gradient-bg {
-    background: linear-gradient(135deg, #ffb77b 0%, #6d3a00 100%);
+  .os-gradient {
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+  }
+  .os-gradient-text {
+    background: linear-gradient(135deg, #c7d2fe, #818cf8, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .os-gradient-subtle {
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.08), rgba(99, 102, 241, 0.04));
   }
 
-  /* Tonal surface transitions */
-  .tonal-shift {
-    transition: background-color 0.3s ease;
+  .os-glow {
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.15), 0 0 60px rgba(129, 140, 248, 0.05);
+  }
+  .os-glow-sm {
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.1);
   }
 
-  /* Ghost border — felt, not seen */
-  .ghost-border {
-    border: 1px solid rgba(72, 72, 72, 0.15);
+  .os-noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
   }
 
-  /* Surface level classes */
-  .ke-surface { background-color: var(--ke-surface); }
-  .ke-surface-low { background-color: var(--ke-surface-container-low); }
-  .ke-surface-mid { background-color: var(--ke-surface-container); }
-  .ke-surface-high { background-color: var(--ke-surface-container-high); }
-  .ke-surface-highest { background-color: var(--ke-surface-container-highest); }
-
-  /* Industrial label style */
-  .ke-label {
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ke-on-surface-variant);
-    opacity: 0.5;
+  .os-dots {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 
-  /* Monospace tech code */
-  .ke-code {
-    font-family: var(--font-heading), ui-monospace, monospace;
-    font-size: 0.625rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .os-border-gradient {
+    position: relative;
+    background: #111113;
+    border-radius: 12px;
   }
-
-  .text-gradient {
-    color: var(--foreground);
-  }
-  .bg-grid {
-    background: transparent;
-  }
-  .bg-dots {
-    background: transparent;
-  }
-  .animate-pulse-slow {
-    animation: none;
-  }
-  .animate-glow {
-    animation: none;
+  .os-border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.2), rgba(255, 255, 255, 0.04), rgba(129, 140, 248, 0.1));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    pointer-events: none;
   }
 }
 
-@keyframes glow-pulse {
-  from { box-shadow: none; }
-  to { box-shadow: none; }
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
 }
 
-/* ─── Scrollbar Styling ───────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -226,21 +288,21 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--ke-outline-variant, hsl(220 14% 22%));
+  background: #27272a;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ke-outline, hsl(220 14% 30%));
+  background: #3f3f46;
 }
 
-/* ─── Code/Diff Styling ───────────────────────────────────── */
+/* ─── Code/Diff Styling ──────────────────────────────────── */
 .diff-add {
-  background: hsl(142 71% 45% / 12%);
-  color: hsl(142 71% 65%);
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
 }
 .diff-remove {
-  background: hsl(0 72% 51% / 12%);
-  color: hsl(0 72% 70%);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
 }
 .diff-line {
   font-family: var(--font-heading), ui-monospace, monospace;
@@ -248,20 +310,4 @@
   line-height: 1.6;
   white-space: pre;
   padding: 0 1rem;
-}
-
-/* ─── Skeleton shimmer ────────────────────────────────────── */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--ke-surface-container-low, hsl(220 14% 14%)) 25%,
-    var(--ke-surface-container-high, hsl(220 14% 18%)) 50%,
-    var(--ke-surface-container-low, hsl(220 14% 14%)) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
 }

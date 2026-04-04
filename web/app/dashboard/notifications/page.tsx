@@ -17,23 +17,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const actionConfig: Record<string, { color: string; icon: React.ReactNode }> = {
   anomaly_detected: {
-    color: "hsl(38, 92%, 55%)",
+    color: "#fbbf24",
     icon: <IconAlertTriangle className="h-5 w-5" />,
   },
   bug_detected: {
-    color: "hsl(0, 72%, 60%)",
+    color: "#f87171",
     icon: <IconBug className="h-5 w-5" />,
   },
   fix_generated: {
-    color: "hsl(199, 89%, 55%)",
+    color: "#60a5fa",
     icon: <IconSparkles className="h-5 w-5" />,
   },
   pr_created: {
-    color: "hsl(265, 90%, 70%)",
+    color: "#818cf8",
     icon: <IconGitPullRequest className="h-5 w-5" />,
   },
   auto_resolved: {
-    color: "hsl(142, 71%, 55%)",
+    color: "#34d399",
     icon: <IconShieldCheck className="h-5 w-5" />,
   },
 };
@@ -84,11 +84,11 @@ export default function NotificationsPage() {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-[72px] rounded-xl bg-[hsl(225,15%,12%)]" />
+                <Skeleton key={i} className="h-[72px] rounded-xl bg-[#18181b]" />
               ))}
             </div>
           ) : actions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[hsl(220,10%,45%)]">
+            <div className="flex flex-col items-center justify-center py-20 text-[#52525b]">
               <IconBell className="mb-3 h-12 w-12 opacity-30" />
               <p className="text-lg font-medium text-white">No activity yet</p>
               <p className="mt-1 text-sm">AI actions will appear here as they happen</p>
@@ -97,14 +97,15 @@ export default function NotificationsPage() {
             <motion.div variants={container} initial="hidden" animate="show" className="space-y-2">
               {actions.map((action) => {
                 const cfg = actionConfig[action.type] ?? {
-                  color: "hsl(220, 10%, 55%)",
+                  color: "#71717a",
                   icon: <IconActivity className="h-5 w-5" />,
                 };
                 return (
                   <motion.div
                     key={action.id}
                     variants={item}
-                    className="flex items-start gap-4 rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-4 hover:border-[hsl(220,14%,22%)]"
+                    className="flex items-start gap-4 rounded-xl bg-[#111113] p-4 hover:bg-[#151517] transition-colors"
+                    style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
                   >
                     <div
                       className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -115,11 +116,11 @@ export default function NotificationsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-medium text-white line-clamp-2">{action.message}</p>
-                        <span className="shrink-0 text-[10px] text-[hsl(220,10%,40%)]">
+                        <span className="shrink-0 text-[10px] text-[#52525b]">
                           {timeAgo(action.timestamp)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-[hsl(220,10%,45%)]">
+                      <p className="mt-0.5 text-[11px] text-[#52525b]">
                         {action.serviceName} · {action.type.replace(/_/g, " ")}
                       </p>
                     </div>

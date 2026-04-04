@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconLoader2, IconShieldCheck, IconX } from "@tabler/icons-react";
+import { IconLoader2, IconHammer, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth-client";
 import { useAppStore } from "@/lib/store";
+import { Particles } from "@/components/ui/particles";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 
 export default function SignInPage() {
   const router = useRouter();
   const setAuth = useAppStore((s) => s.setAuth);
 
-  // Sign in
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [signInError, setSignInError] = useState("");
   const [signInLoading, setSignInLoading] = useState(false);
 
-  // Register modal
   const [showRegister, setShowRegister] = useState(false);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -75,68 +75,89 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[hsl(220,13%,7%)]">
-      <div className="w-full max-w-[380px] px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-[#09090b] overflow-hidden">
+      {/* Particle background */}
+      <Particles
+        className="absolute inset-0"
+        quantity={60}
+        color="#818cf8"
+        ease={80}
+        size={0.6}
+        staticity={40}
+        refresh
+      />
+
+      {/* Gradient orbs */}
+      <div className="absolute top-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-[#818cf8]/5 blur-[120px]" />
+      <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-[#6366f1]/5 blur-[100px]" />
+
+      <div className="relative w-full max-w-[380px] px-4">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[hsl(220,13%,18%)] bg-[hsl(220,13%,11%)]">
-            <IconShieldCheck className="h-5 w-5 text-[hsl(220,10%,65%)]" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl os-gradient shadow-lg shadow-[#818cf8]/20 animate-float">
+            <IconHammer className="h-7 w-7 text-white" />
           </div>
           <div className="text-center">
-            <h1 className="text-lg font-semibold tracking-tight text-white">AutoHeal</h1>
-            <p className="mt-0.5 text-sm text-[hsl(220,10%,42%)]">Sign in to your account</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">OpSmith</h1>
+            <p className="mt-1 text-sm text-[#52525b]">AI-Powered Operations Platform</p>
           </div>
         </div>
 
         {/* Sign in form */}
-        <form onSubmit={handleSignIn} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs font-medium text-[hsl(220,10%,55%)]">Email</Label>
-            <Input
-              id="email" type="email" placeholder="you@company.com"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-medium text-[hsl(220,10%,55%)]">Password</Label>
-            <Input
-              id="password" type="password" placeholder="••••••••"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
-            />
+        <div className="rounded-xl p-6 glass-strong">
+          <form onSubmit={handleSignIn} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs font-medium text-[#71717a]">Email</Label>
+              <Input
+                id="email" type="email" placeholder="you@company.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46] focus:border-[#818cf8]/50 focus:ring-[#818cf8]/20"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-medium text-[#71717a]">Password</Label>
+              <Input
+                id="password" type="password" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46] focus:border-[#818cf8]/50 focus:ring-[#818cf8]/20"
+              />
+            </div>
+
+            {signInError && (
+              <p className="rounded-lg border border-[#f87171]/20 bg-[#f87171]/5 px-3 py-2 text-xs text-[#f87171]">
+                {signInError}
+              </p>
+            )}
+
+            <ShimmerButton
+              className="w-full mt-1"
+              shimmerColor="#818cf8"
+              shimmerSize="0.08em"
+              background="linear-gradient(135deg, #818cf8, #6366f1, #4f46e5)"
+            >
+              <span className="text-sm font-medium text-white flex items-center justify-center">
+                {signInLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign in
+              </span>
+            </ShimmerButton>
+          </form>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#27272a]" />
+            <span className="text-[11px] text-[#3f3f46]">or</span>
+            <div className="h-px flex-1 bg-[#27272a]" />
           </div>
 
-          {signInError && (
-            <p className="rounded-md border border-[hsl(0,60%,30%)] bg-[hsl(0,60%,12%)] px-3 py-2 text-xs text-[hsl(0,72%,65%)]">
-              {signInError}
-            </p>
-          )}
-
+          {/* Register button */}
           <Button
-            type="submit" disabled={signInLoading}
-            className="mt-1 w-full border border-[hsl(220,13%,22%)] bg-[hsl(220,13%,14%)] text-sm text-white hover:bg-[hsl(220,13%,18%)] disabled:opacity-50"
+            type="button"
+            onClick={() => { setShowRegister(true); setRegError(""); }}
+            className="w-full border border-[#27272a] bg-transparent text-sm text-[#71717a] hover:bg-[#18181b] hover:text-white"
           >
-            {signInLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
+            Create an account
           </Button>
-        </form>
-
-        {/* Divider */}
-        <div className="my-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-[hsl(220,13%,16%)]" />
-          <span className="text-[11px] text-[hsl(220,10%,35%)]">or</span>
-          <div className="h-px flex-1 bg-[hsl(220,13%,16%)]" />
         </div>
-
-        {/* Register button */}
-        <Button
-          type="button"
-          onClick={() => { setShowRegister(true); setRegError(""); }}
-          className="w-full border border-[hsl(220,13%,20%)] bg-transparent text-sm text-[hsl(220,10%,60%)] hover:bg-[hsl(220,13%,12%)] hover:text-white"
-        >
-          Create an account
-        </Button>
       </div>
 
       {/* Register Modal */}
@@ -146,15 +167,17 @@ export default function SignInPage() {
             className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm"
             onClick={() => setShowRegister(false)}
           />
-          <div className="fixed left-1/2 top-1/2 z-[91] w-full max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[hsl(220,13%,18%)] bg-[hsl(220,13%,9%)] p-6 shadow-2xl">
+          <div className="fixed left-1/2 top-1/2 z-[91] w-full max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-xl p-6 shadow-2xl bg-[#111113]"
+            style={{ border: '1px solid rgba(255, 255, 255, 0.08)' }}
+          >
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-white">Create account</h2>
-                <p className="mt-0.5 text-xs text-[hsl(220,10%,42%)]">Get started with AutoHeal</p>
+                <p className="mt-0.5 text-xs text-[#52525b]">Get started with OpSmith</p>
               </div>
               <button
                 onClick={() => setShowRegister(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-[hsl(220,10%,45%)] hover:bg-[hsl(220,13%,14%)] hover:text-white"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[#52525b] hover:bg-[#18181b] hover:text-white"
               >
                 <IconX className="h-4 w-4" />
               </button>
@@ -162,42 +185,42 @@ export default function SignInPage() {
 
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-[hsl(220,10%,55%)]">Full name</Label>
+                <Label className="text-xs font-medium text-[#71717a]">Full name</Label>
                 <Input
                   type="text" placeholder="Alex Chen"
                   value={regName} onChange={(e) => setRegName(e.target.value)}
-                  className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,11%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
+                  className="border-[#27272a] bg-[#18181b] text-sm text-white placeholder:text-[#3f3f46]"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-[hsl(220,10%,55%)]">Email</Label>
+                <Label className="text-xs font-medium text-[#71717a]">Email</Label>
                 <Input
                   type="email" placeholder="you@company.com"
                   value={regEmail} onChange={(e) => setRegEmail(e.target.value)}
-                  className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,11%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
+                  className="border-[#27272a] bg-[#18181b] text-sm text-white placeholder:text-[#3f3f46]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-[hsl(220,10%,55%)]">Password</Label>
+                  <Label className="text-xs font-medium text-[#71717a]">Password</Label>
                   <Input
                     type="password" placeholder="min. 8 chars"
                     value={regPassword} onChange={(e) => setRegPassword(e.target.value)}
-                    className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,11%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
+                    className="border-[#27272a] bg-[#18181b] text-sm text-white placeholder:text-[#3f3f46]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-[hsl(220,10%,55%)]">Confirm</Label>
+                  <Label className="text-xs font-medium text-[#71717a]">Confirm</Label>
                   <Input
                     type="password" placeholder="••••••••"
                     value={regConfirm} onChange={(e) => setRegConfirm(e.target.value)}
-                    className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,11%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)]"
+                    className="border-[#27272a] bg-[#18181b] text-sm text-white placeholder:text-[#3f3f46]"
                   />
                 </div>
               </div>
 
               {regError && (
-                <p className="rounded-md border border-[hsl(0,60%,30%)] bg-[hsl(0,60%,12%)] px-3 py-2 text-xs text-[hsl(0,72%,65%)]">
+                <p className="rounded-lg border border-[#f87171]/20 bg-[#f87171]/5 px-3 py-2 text-xs text-[#f87171]">
                   {regError}
                 </p>
               )}
@@ -205,13 +228,13 @@ export default function SignInPage() {
               <div className="flex gap-2 pt-1">
                 <Button
                   type="button" onClick={() => setShowRegister(false)}
-                  className="flex-1 border border-[hsl(220,13%,18%)] bg-transparent text-sm text-[hsl(220,10%,55%)] hover:bg-[hsl(220,13%,13%)] hover:text-white"
+                  className="flex-1 border border-[#27272a] bg-transparent text-sm text-[#71717a] hover:bg-[#18181b] hover:text-white"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit" disabled={regLoading}
-                  className="flex-1 border border-[hsl(220,13%,22%)] bg-[hsl(220,13%,14%)] text-sm text-white hover:bg-[hsl(220,13%,18%)] disabled:opacity-50"
+                  className="flex-1 os-gradient text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 border-0"
                 >
                   {regLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create account

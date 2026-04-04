@@ -12,6 +12,8 @@ import {
   IconArrowRight,
   IconClock,
   IconBolt,
+  IconTrendingUp,
+  IconHeartbeat,
 } from "@tabler/icons-react";
 import { TopBar } from "@/components/top-bar";
 import {
@@ -49,36 +51,34 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MagicCard } from "@/components/ui/magic-card";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { BorderBeam } from "@/components/ui/border-beam";
 
-/* ── Status codes for Kinetic Engineering ────────────────── */
-const STATUS_CODE: Record<string, { code: string; bg: string; text: string; dot: string; dotShadow: string }> = {
+const STATUS_CODE: Record<string, { code: string; bg: string; text: string; dot: string }> = {
   healthy: {
-    code: "SYS_OK",
-    bg: "rgba(255, 183, 123, 0.1)",
-    text: "#ffb77b",
-    dot: "#ffb77b",
-    dotShadow: "0 0 8px rgba(255,183,123,0.4)",
+    code: "Healthy",
+    bg: "rgba(52, 211, 153, 0.1)",
+    text: "#34d399",
+    dot: "#34d399",
   },
   warning: {
-    code: "STBL_WRN",
-    bg: "rgba(65, 58, 54, 1)",
-    text: "#c8bdb7",
-    dot: "#a69c96",
-    dotShadow: "0 0 8px rgba(166,156,150,0.4)",
+    code: "Warning",
+    bg: "rgba(251, 191, 36, 0.1)",
+    text: "#fbbf24",
+    dot: "#fbbf24",
   },
   critical: {
-    code: "ERR_911",
-    bg: "rgba(237, 127, 100, 0.1)",
-    text: "#ed7f64",
-    dot: "#ed7f64",
-    dotShadow: "0 0 8px rgba(237,127,100,0.4)",
+    code: "Critical",
+    bg: "rgba(248, 113, 113, 0.1)",
+    text: "#f87171",
+    dot: "#f87171",
   },
   unknown: {
-    code: "OFFLINE",
-    bg: "rgba(72, 72, 72, 0.2)",
-    text: "#767575",
-    dot: "#767575",
-    dotShadow: "none",
+    code: "Offline",
+    bg: "rgba(82, 82, 91, 0.15)",
+    text: "#52525b",
+    dot: "#52525b",
   },
 };
 
@@ -152,8 +152,7 @@ export default function DashboardPage() {
 
       setServices(rows);
 
-      // Build latency series from first service with timeSeries data
-      const colors = ["#ffb77b", "#f6a762", "#ead1a3", "#a69c96"];
+      const colors = ["#818cf8", "#6366f1", "#a5b4fc", "#a1a1aa"];
       const series: LatencySeries[] = metricsList
         .map((m, i) => {
           if (m.status !== "fulfilled") return null;
@@ -168,7 +167,6 @@ export default function DashboardPage() {
         .filter((s): s is LatencySeries => s !== null);
       setLatencyData(series);
 
-      // Compute dashboard stats from real data
       if (rows.length > 0) {
         const healthy = rows.filter((s) => s.status === "healthy").length;
         const warning = rows.filter((s) => s.status === "warning").length;
@@ -192,13 +190,12 @@ export default function DashboardPage() {
         });
       }
     } catch {
-      // Backend not reachable — leave stats null
+      // Backend not reachable
     }
 
     setLoading(false);
   }
 
-  // Area chart: last 24 points from first latency series
   const chartData =
     latencyData.length > 0
       ? latencyData[0].data
@@ -222,190 +219,185 @@ export default function DashboardPage() {
   return (
     <>
       <TopBar
-        title="Command Center"
-        subtitle="Real-time monitoring overview"
+        title="Overview"
+        subtitle="Real-time monitoring"
       />
 
       <section className="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
-        {/* ── Kinetic Stats Row ─────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* ── Stats Row with MagicCard ─────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Services Count */}
-          <div
-            className="bg-[#131313] p-5 hover:border-l-[#ffb77b]/40 transition-all group"
-            style={{ borderLeft: '2px solid rgba(72, 72, 72, 0.1)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(255,183,123,0.4)')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(72, 72, 72, 0.1)')}
+          <MagicCard
+            className="rounded-xl"
+            gradientFrom="#818cf8"
+            gradientTo="#6366f1"
+            gradientColor="#1a1a2e"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#acabaa]/50">
-              Services Count
-            </span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-bold text-[#e7e5e4] tracking-tight">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#52525b]">Services</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#818cf8]/10">
+                  <IconServer className="h-4 w-4 text-[#818cf8]" />
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-white tracking-tight">
                 {loading ? (
-                  <span className="inline-block h-8 w-16 animate-pulse rounded bg-[#1f2020]" />
+                  <span className="inline-block h-7 w-14 animate-pulse rounded bg-[#18181b]" />
                 ) : (
-                  stats?.totalServices ?? 0
+                  <NumberTicker value={stats?.totalServices ?? 0} />
                 )}
               </span>
               {!loading && (
-                <span className="text-xs text-[#ffb77b]/80">
-                  +{stats?.healthyCount ?? 0} stable
-                </span>
+                <p className="text-xs text-[#34d399] mt-1 flex items-center gap-1">
+                  <IconTrendingUp className="h-3 w-3" />
+                  {stats?.healthyCount ?? 0} healthy
+                </p>
               )}
             </div>
-            <div className="mt-4 h-1 w-full bg-[#252626] overflow-hidden rounded-full">
-              <div
-                className="h-full bg-[#ffb77b]/20 transition-all"
-                style={{ width: loading ? '0%' : '75%' }}
-              />
-            </div>
-          </div>
+          </MagicCard>
 
           {/* Avg Uptime */}
-          <div
-            className="bg-[#131313] p-5 transition-all group"
-            style={{ borderLeft: '2px solid rgba(72, 72, 72, 0.1)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(255,183,123,0.4)')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(72, 72, 72, 0.1)')}
+          <MagicCard
+            className="rounded-xl"
+            gradientFrom="#34d399"
+            gradientTo="#059669"
+            gradientColor="#0a1f1a"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#acabaa]/50">
-              Avg Uptime
-            </span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-bold text-[#e7e5e4] tracking-tight">
-                {loading ? (
-                  <span className="inline-block h-8 w-16 animate-pulse rounded bg-[#1f2020]" />
-                ) : (
-                  `${stats?.avgUptime ?? 0}%`
-                )}
-              </span>
-              {!loading && (
-                <span className="text-xs text-[#ffb77b]/80">SYS_OK</span>
-              )}
-            </div>
-            <div className="mt-4 flex gap-1">
-              {[1, 2, 3, 4].map((i) => (
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#52525b]">Avg Uptime</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#34d399]/10">
+                  <IconHeartbeat className="h-4 w-4 text-[#34d399]" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-2xl font-bold text-white tracking-tight">
+                  {loading ? (
+                    <span className="inline-block h-7 w-14 animate-pulse rounded bg-[#18181b]" />
+                  ) : (
+                    <NumberTicker value={stats?.avgUptime ?? 0} decimalPlaces={2} />
+                  )}
+                </span>
+                {!loading && <span className="text-sm text-[#a1a1aa]">%</span>}
+              </div>
+              <div className="mt-3 h-1 w-full bg-[#18181b] overflow-hidden rounded-full">
                 <div
-                  key={i}
-                  className={`h-1 flex-1 ${i <= 3 ? 'bg-[#ffb77b]' : 'bg-[#ffb77b]/20'}`}
+                  className="h-full bg-[#34d399] rounded-full transition-all duration-700"
+                  style={{ width: loading ? '0%' : `${Math.min(stats?.avgUptime ?? 0, 100)}%` }}
                 />
-              ))}
+              </div>
             </div>
-          </div>
+          </MagicCard>
 
           {/* Avg Latency */}
-          <div
-            className="bg-[#131313] p-5 transition-all group"
-            style={{ borderLeft: '2px solid rgba(72, 72, 72, 0.1)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(255,183,123,0.4)')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(72, 72, 72, 0.1)')}
+          <MagicCard
+            className="rounded-xl"
+            gradientFrom="#60a5fa"
+            gradientTo="#3b82f6"
+            gradientColor="#0a1628"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#acabaa]/50">
-              Avg Latency
-            </span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-bold text-[#e7e5e4] tracking-tight">
-                {loading ? (
-                  <span className="inline-block h-8 w-16 animate-pulse rounded bg-[#1f2020]" />
-                ) : (
-                  `${stats?.avgLatency ?? 0}ms`
-                )}
-              </span>
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#52525b]">Avg Latency</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#60a5fa]/10">
+                  <IconClock className="h-4 w-4 text-[#60a5fa]" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-2xl font-bold text-white tracking-tight">
+                  {loading ? (
+                    <span className="inline-block h-7 w-14 animate-pulse rounded bg-[#18181b]" />
+                  ) : (
+                    <NumberTicker value={stats?.avgLatency ?? 0} />
+                  )}
+                </span>
+                {!loading && <span className="text-sm text-[#a1a1aa]">ms</span>}
+              </div>
               {!loading && (
-                <span className="text-xs text-[#acabaa]">-4ms shift</span>
+                <p className="text-xs text-[#a1a1aa] mt-1">within threshold</p>
               )}
             </div>
-            {/* Mini sparkline bars */}
-            <div className="mt-4 flex items-end gap-[2px] h-4 opacity-30">
-              {[2, 3, 2, 4, 2, 3, 1, 3, 2, 4, 3, 2].map((h, i) => (
-                <div key={i} className="bg-[#ffb77b] w-1" style={{ height: `${h * 4}px` }} />
-              ))}
-            </div>
-          </div>
+          </MagicCard>
 
           {/* Critical Issues */}
-          <div
-            className="bg-[#131313] p-5 transition-all group"
-            style={{ borderLeft: '2px solid rgba(237, 127, 100, 0.2)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderLeft = '2px solid #ed7f64')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderLeft = '2px solid rgba(237, 127, 100, 0.2)')}
+          <MagicCard
+            className="rounded-xl"
+            gradientFrom="#f87171"
+            gradientTo="#ef4444"
+            gradientColor="#1f0a0a"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#ed7f64]/60">
-              Critical Issues
-            </span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-bold text-[#ed7f64] tracking-tight">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#52525b]">Critical</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f87171]/10">
+                  <IconAlertTriangle className="h-4 w-4 text-[#f87171]" />
+                </div>
+              </div>
+              <span className={`text-2xl font-bold tracking-tight ${(stats?.criticalCount ?? 0) > 0 ? 'text-[#f87171]' : 'text-white'}`}>
                 {loading ? (
-                  <span className="inline-block h-8 w-10 animate-pulse rounded bg-[#1f2020]" />
+                  <span className="inline-block h-7 w-10 animate-pulse rounded bg-[#18181b]" />
                 ) : (
-                  String(stats?.criticalCount ?? 0).padStart(2, "0")
+                  <NumberTicker value={stats?.criticalCount ?? 0} />
                 )}
               </span>
               {!loading && (
-                <span className="text-xs text-[#ed7f64]/80">
-                  {(stats?.criticalCount ?? 0) > 0 ? "REQUIRING_HEAL" : "ALL_CLEAR"}
-                </span>
+                <p className={`text-xs mt-1 ${(stats?.criticalCount ?? 0) > 0 ? 'text-[#f87171]/70' : 'text-[#34d399]'}`}>
+                  {(stats?.criticalCount ?? 0) > 0 ? "needs attention" : "all clear"}
+                </p>
               )}
             </div>
-            <div className="mt-4 flex items-center justify-between">
-              {!loading && (stats?.criticalCount ?? 0) > 0 && (
-                <span className="text-[10px] font-mono text-[#ed7f64]/40">
-                  ERR_CODE: AH-402
-                </span>
-              )}
-              {(stats?.criticalCount ?? 0) > 0 && (
-                <IconAlertTriangle className="h-4 w-4 text-[#ed7f64]" />
-              )}
-            </div>
-          </div>
+          </MagicCard>
         </div>
 
-        {/* ── Charts + AI Interventions ────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Network Performance Chart */}
+        {/* ── Charts + AI Activity ─────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Network Performance Chart with BorderBeam */}
           <div
-            className="lg:col-span-2 bg-[#131313] p-8 rounded-lg overflow-hidden relative"
-            style={{ border: '1px solid rgba(72, 72, 72, 0.05)' }}
+            className="lg:col-span-2 relative rounded-xl bg-[#111113] p-6 overflow-hidden"
+            style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
           >
-            <div className="flex justify-between items-start mb-10">
+            <BorderBeam
+              size={200}
+              duration={8}
+              colorFrom="#818cf8"
+              colorTo="#6366f1"
+              borderWidth={1}
+            />
+            <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-lg font-bold tracking-tight text-[#e7e5e4]">
-                  Network Performance
-                </h3>
-                <p className="text-xs text-[#acabaa] mt-1">
-                  Real-time latency telemetry across global clusters
-                </p>
+                <h3 className="text-sm font-semibold text-white">Network Performance</h3>
+                <p className="text-xs text-[#52525b] mt-1">Latency over time</p>
               </div>
               <div className="flex gap-4">
                 {latencyData.slice(0, 2).map((s, i) => (
                   <div key={s.label} className="flex items-center gap-2">
                     <span
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: i === 0 ? '#ffb77b' : 'rgba(255,183,123,0.2)' }}
+                      style={{ backgroundColor: '#818cf8', opacity: i === 0 ? 1 : 0.4 }}
                     />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#acabaa]">
-                      {s.label.length > 10 ? s.label.substring(0, 10) : s.label}
+                    <span className="text-[11px] text-[#71717a]">
+                      {s.label.length > 12 ? s.label.substring(0, 12) : s.label}
                     </span>
                   </div>
                 ))}
                 {latencyData.length === 0 && !loading && (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#ffb77b]" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#acabaa]">US-EAST</span>
+                      <span className="w-2 h-2 rounded-full bg-[#818cf8]" />
+                      <span className="text-[11px] text-[#71717a]">Primary</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#ffb77b]/20" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#acabaa]">EU-WEST</span>
+                      <span className="w-2 h-2 rounded-full bg-[#818cf8]/40" />
+                      <span className="text-[11px] text-[#71717a]">Secondary</span>
                     </div>
                   </>
                 )}
               </div>
             </div>
             {loading ? (
-              <Skeleton className="h-[280px] rounded bg-[#1f2020]" />
+              <Skeleton className="h-[260px] rounded-lg bg-[#18181b]" />
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={chartData}>
                   <defs>
                     {latencyData.map((s) => (
@@ -417,44 +409,46 @@ export default function DashboardPage() {
                         x2="0"
                         y2="1"
                       >
-                        <stop offset="0%" stopColor="#ffb77b" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="#ffb77b" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#818cf8" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#818cf8" stopOpacity={0} />
                       </linearGradient>
                     ))}
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="4"
-                    stroke="rgba(72, 72, 72, 0.3)"
+                    strokeDasharray="3"
+                    stroke="rgba(255, 255, 255, 0.04)"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="time"
-                    tick={{ fill: "#767575", fontSize: 10 }}
+                    tick={{ fill: "#52525b", fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "#767575", fontSize: 10 }}
+                    tick={{ fill: "#52525b", fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
                     width={30}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1f2020",
-                      border: "1px solid rgba(72, 72, 72, 0.3)",
-                      borderRadius: "6px",
+                      backgroundColor: "#18181b",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      borderRadius: "8px",
                       fontSize: "11px",
-                      color: "#e7e5e4",
+                      color: "#fafafa",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                     }}
                   />
-                  {latencyData.map((s) => (
+                  {latencyData.map((s, i) => (
                     <Area
                       key={s.label}
                       type="monotone"
                       dataKey={s.label}
-                      stroke="#ffb77b"
+                      stroke="#818cf8"
                       strokeWidth={2}
+                      strokeOpacity={i === 0 ? 1 : 0.4}
                       fill={`url(#grad-${s.label})`}
                     />
                   ))}
@@ -463,40 +457,37 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* AI Interventions */}
+          {/* AI Activity */}
           <div
-            className="bg-[#131313] p-8 rounded-lg flex flex-col"
-            style={{ border: '1px solid rgba(72, 72, 72, 0.05)' }}
+            className="rounded-xl bg-[#111113] p-6 flex flex-col"
+            style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-[#ffb77b]">
-                AI Interventions
-              </h3>
-              <IconBolt className="h-4 w-4 text-[#ffb77b]" />
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-sm font-semibold text-white">AI Activity</h3>
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#818cf8]/10">
+                <IconBolt className="h-3.5 w-3.5 text-[#818cf8]" />
+              </div>
             </div>
             {loading ? (
-              <div className="space-y-4 flex-1">
+              <div className="space-y-3 flex-1">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 rounded bg-[#1f2020]" />
+                  <Skeleton key={i} className="h-16 rounded-lg bg-[#18181b]" />
                 ))}
               </div>
             ) : (
-              <div className="space-y-6 flex-1">
-                {actions.slice(0, 3).map((a) => (
-                  <div key={a.id} className="flex gap-4 group">
-                    <div className="mt-1">
-                      <div className="w-8 h-8 rounded bg-[#ffb77b]/10 flex items-center justify-center text-[#ffb77b]">
+              <div className="space-y-4 flex-1">
+                {actions.slice(0, 4).map((a) => (
+                  <div key={a.id} className="flex gap-3 group">
+                    <div className="mt-0.5">
+                      <div className="w-7 h-7 rounded-lg bg-[#818cf8]/10 flex items-center justify-center text-[#818cf8]">
                         {aiActionIcon(a.type)}
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-bold text-[#e7e5e4] truncate">
-                        {a.message.split(':')[0] || a.message.substring(0, 30)}
-                      </h4>
-                      <p className="text-[11px] text-[#acabaa] mt-1 leading-relaxed line-clamp-2">
+                      <p className="text-xs font-medium text-[#e4e4e7] line-clamp-2 leading-relaxed">
                         {a.message}
                       </p>
-                      <span className="text-[9px] font-mono text-[#acabaa]/40 mt-2 block uppercase tracking-wider">
+                      <span className="text-[10px] text-[#52525b] mt-1 block">
                         {a.serviceName} · {timeAgo(a.timestamp)}
                       </span>
                     </div>
@@ -506,130 +497,97 @@ export default function DashboardPage() {
             )}
             <Link
               href="/dashboard/insights"
-              className="w-full mt-6 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-[#acabaa] hover:text-[#ffb77b] transition-all block"
-              style={{ border: '1px solid rgba(72, 72, 72, 0.3)' }}
+              className="w-full mt-4 py-2.5 text-center text-xs font-medium text-[#71717a] hover:text-[#818cf8] transition-all rounded-lg block hover:bg-[#818cf8]/5"
+              style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
             >
-              View Complete Logs
+              View all activity
+              <IconArrowRight className="inline h-3 w-3 ml-1" />
             </Link>
           </div>
         </div>
 
-        {/* ── System Registry ──────────────────────────────── */}
+        {/* ── Service Registry ─────────────────────────────── */}
         <div
-          className="bg-[#131313] rounded-lg overflow-hidden"
-          style={{ border: '1px solid rgba(72, 72, 72, 0.05)' }}
+          className="rounded-xl bg-[#111113] overflow-hidden"
+          style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
         >
           <div
-            className="p-6 flex justify-between items-center"
-            style={{ borderBottom: '1px solid rgba(72, 72, 72, 0.1)' }}
+            className="p-5 flex justify-between items-center"
+            style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}
           >
-            <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-[#e7e5e4]">
-              System Registry
-            </h3>
-            <div className="flex gap-2">
-              <Link
-                href="/dashboard/services"
-                className="px-3 py-1 bg-[#1f2020] rounded text-[10px] font-bold uppercase text-[#acabaa] hover:text-[#e7e5e4] transition-colors"
-                style={{ border: '1px solid rgba(72, 72, 72, 0.2)' }}
-              >
-                All
-              </Link>
-              <button className="px-3 py-1 text-[10px] font-bold uppercase text-[#acabaa] hover:text-[#e7e5e4] transition-colors">
-                Core
-              </button>
-              <button className="px-3 py-1 text-[10px] font-bold uppercase text-[#acabaa] hover:text-[#e7e5e4] transition-colors">
-                Edge
-              </button>
-            </div>
+            <h3 className="text-sm font-semibold text-white">Services</h3>
+            <Link
+              href="/dashboard/services"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#71717a] hover:text-white transition-colors hover:bg-[#18181b]"
+            >
+              View all
+              <IconArrowRight className="inline h-3 w-3 ml-1" />
+            </Link>
           </div>
 
           {loading ? (
             <div className="space-y-px p-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 rounded bg-[#1f2020]" />
+                <Skeleton key={i} className="h-14 rounded-lg bg-[#18181b]" />
               ))}
             </div>
           ) : services.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-[#767575]">
+            <div className="flex flex-col items-center py-12 text-[#52525b]">
               <IconServer className="mb-2 h-6 w-6 opacity-40" />
-              <p className="text-xs">No services yet</p>
+              <p className="text-sm">No services registered</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[10px] font-bold uppercase tracking-wider text-[#acabaa]/40"
-                    style={{ borderBottom: '1px solid rgba(72, 72, 72, 0.05)' }}
+                  <tr className="text-[11px] font-medium text-[#52525b]"
+                    style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}
                   >
-                    <th className="px-8 py-4">Service Name</th>
-                    <th className="px-8 py-4">Status</th>
-                    <th className="px-8 py-4">Efficiency</th>
-                    <th className="px-8 py-4 text-right">Uptime</th>
+                    <th className="px-6 py-3 font-medium">Service</th>
+                    <th className="px-6 py-3 font-medium">Status</th>
+                    <th className="px-6 py-3 font-medium">Uptime</th>
+                    <th className="px-6 py-3 font-medium text-right">Latency</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y" style={{ borderColor: 'rgba(72, 72, 72, 0.05)' }}>
+                <tbody>
                   {services.map((svc) => {
                     const sc = STATUS_CODE[svc.status] || STATUS_CODE.unknown;
-                    const efficiencyPercent = svc.uptime > 0
-                      ? Math.min(Math.round(svc.uptime), 100)
-                      : 0;
                     return (
                       <tr
                         key={svc.id}
-                        className="hover:bg-[#1f2020] transition-colors group cursor-pointer"
+                        className="hover:bg-[#18181b]/50 transition-colors cursor-pointer group"
+                        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)' }}
                         onClick={() => window.location.href = `/dashboard/services/${svc.id}`}
                       >
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{
-                                backgroundColor: sc.dot,
-                                boxShadow: sc.dotShadow,
-                                animation: svc.status === 'critical' ? 'pulse 2s infinite' : undefined,
-                              }}
-                            />
-                            <span className="text-sm font-medium text-[#e7e5e4]">
-                              {svc.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span
-                            className="text-[10px] font-mono px-2 py-0.5 rounded"
-                            style={{
-                              backgroundColor: sc.bg,
-                              color: sc.text,
-                            }}
-                          >
-                            {sc.code}
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-[#e4e4e7] group-hover:text-white transition-colors">
+                            {svc.name}
                           </span>
                         </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <span
-                              className="text-xs font-mono"
-                              style={{ color: svc.status === 'critical' ? '#ed7f64' : '#e7e5e4' }}
-                            >
-                              {efficiencyPercent}%
-                            </span>
-                            <div className="w-24 h-1 bg-[#252626] rounded-full overflow-hidden">
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: sc.dot }} />
+                            <span className="text-xs" style={{ color: sc.text }}>{sc.code}</span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-20 h-1 bg-[#18181b] rounded-full overflow-hidden">
                               <div
                                 className="h-full rounded-full transition-all"
                                 style={{
-                                  width: `${efficiencyPercent}%`,
-                                  backgroundColor: svc.status === 'critical'
-                                    ? '#ed7f64'
-                                    : svc.status === 'warning'
-                                      ? '#a69c96'
-                                      : '#ffb77b',
+                                  width: `${Math.min(Math.round(svc.uptime), 100)}%`,
+                                  backgroundColor: sc.dot,
                                 }}
                               />
                             </div>
+                            <span className="text-xs text-[#a1a1aa] font-mono">
+                              {svc.uptime.toFixed(svc.uptime >= 99.9 ? 3 : 1)}%
+                            </span>
                           </div>
                         </td>
-                        <td className="px-8 py-5 text-right font-mono text-xs text-[#acabaa]">
-                          {svc.uptime.toFixed(svc.uptime >= 99.9 ? 3 : 1)}%
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-xs text-[#a1a1aa] font-mono">{svc.avgLatency}ms</span>
                         </td>
                       </tr>
                     );
