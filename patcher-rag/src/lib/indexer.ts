@@ -32,10 +32,7 @@ async function findSourceFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-/**
- * Index all source files in a directory into the given VectorStore.
- * Existing documents are upserted so re-indexing is idempotent.
- */
+
 export async function indexDirectory(dir: string, store: VectorStore): Promise<number> {
   const files = await findSourceFiles(dir);
   let totalChunks = 0;
@@ -48,7 +45,7 @@ export async function indexDirectory(dir: string, store: VectorStore): Promise<n
       continue;
     }
 
-    // Skip empty or very large files (>500 KB)
+    
     if (!content.trim() || content.length > 500_000) continue;
 
     const relativePath = path.relative(dir, file);

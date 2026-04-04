@@ -11,19 +11,16 @@ export const log = (msg: string, id?: string) => {
   console.log(`[${ts}]${id ? ` [${id}]` : ""} ${msg}`);
 };
 
-// ─── Repo cloning ─────────────────────────────────────────────────────────────
 
-/**
- * Clone a GitHub repo into a temp directory.
- * Injects GITHUB_TOKEN into the URL for private repos if the env var is set.
- */
+
+
 export async function cloneRepo(repoUrl: string, destDir: string): Promise<void> {
-  // Clean up any previous attempt
+  
   if (existsSync(destDir)) await rm(destDir, { recursive: true, force: true });
   await mkdir(destDir, { recursive: true });
 
   const token = process.env.GITHUB_TOKEN;
-  // Inject token for private repos: https://TOKEN@github.com/...
+  
   const authedUrl = token
     ? repoUrl.replace("https://", `https://${token}@`)
     : repoUrl;
@@ -32,14 +29,12 @@ export async function cloneRepo(repoUrl: string, destDir: string): Promise<void>
   await execAsync(`git clone --depth=1 "${authedUrl}" "${destDir}"`);
 }
 
-/**
- * Remove a cloned temp directory after patching is done.
- */
+
 export async function cleanupRepo(dir: string): Promise<void> {
   await rm(dir, { recursive: true, force: true });
 }
 
-// ─── Git (all ops scoped to a specific repo dir) ──────────────────────────────
+
 
 export interface GitResult {
   success: boolean;
@@ -51,7 +46,7 @@ export async function gitEnsureBranch(branch: string, repoDir: string): Promise<
     await execAsync(`git checkout -b "${branch}"`, { cwd: repoDir });
     return true;
   } catch {
-    // Branch may already exist
+    
     try {
       await execAsync(`git checkout "${branch}"`, { cwd: repoDir });
       return true;
@@ -61,7 +56,7 @@ export async function gitEnsureBranch(branch: string, repoDir: string): Promise<
   }
 }
 
-// Git identity passed via environment variables — no global config needed in Docker
+
 const gitEnv = () => ({
   ...process.env,
   GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME ?? "AI SRE Patcher",
@@ -95,7 +90,7 @@ export async function gitDiffHead(repoDir: string): Promise<string> {
       "git show HEAD --no-color --unified=3",
       { cwd: repoDir },
     );
-    // Truncate to keep PR body reasonable
+    
     return stdout.length > 6000 ? stdout.slice(0, 6000) + "\n... (diff truncated)" : stdout;
   } catch {
     return "";
@@ -131,9 +126,9 @@ export async function gitCurrentBranch(repoDir: string): Promise<string> {
 
 export async function pushBranch(branch: string, repoDir: string): Promise<GitResult> {
   try {
-    // Re-inject the token into the remote URL before every push.
-    // Git strips credentials from stored remote URLs for security, so
-    // the token used during `git clone` is not automatically reused.
+    
+    
+    
     const token = process.env.GITHUB_TOKEN;
     if (token) {
       const { stdout } = await execAsync("git remote get-url origin", { cwd: repoDir });
@@ -147,7 +142,7 @@ export async function pushBranch(branch: string, repoDir: string): Promise<GitRe
   }
 }
 
-// ─── GitHub PR (via gh CLI, scoped to cloned repo dir) ───────────────────────
+
 
 export interface PRResult {
   success: boolean;
@@ -165,18 +160,18 @@ export async function createGitHubPR(opts: {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return { success: false, error: "GITHUB_TOKEN not set" };
 
-  // 1. Push the branch (injects token into remote URL)
+  
   const pushResult = await pushBranch(opts.branch, opts.repoDir);
   if (!pushResult.success) return { success: false, error: `Push failed: ${pushResult.message}` };
 
-  // 2. Parse owner/repo from remote URL
+  
   const { stdout } = await execAsync("git remote get-url origin", { cwd: opts.repoDir });
-  const remote = stdout.trim().replace(/^https:\/\/[^@]+@/, "https://"); // strip credentials
+  const remote = stdout.trim().replace(/^https:\/\/[^@]+@/, "https://"); 
   const match = remote.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
   if (!match) return { success: false, error: `Cannot parse GitHub repo from: ${remote}` };
   const [, owner, repo] = match;
 
-  // 3. Create PR via GitHub REST API (no gh CLI needed)
+  
   const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
     method: "POST",
     headers: {
@@ -202,7 +197,7 @@ export async function createGitHubPR(opts: {
   return { success: true, url: data.html_url };
 }
 
-// ─── File operations ──────────────────────────────────────────────────────────
+
 
 export async function readFileContent(filePath: string): Promise<string | null> {
   try {
@@ -223,10 +218,7 @@ export async function writeFileContent(filePath: string, content: string): Promi
   }
 }
 
-/**
- * Precise string replacement — finds the first occurrence of searchStr and
- * replaces it with replaceStr. Returns the number of lines affected.
- */
+
 export async function replaceInFile(
   filePath: string,
   searchStr: string,
@@ -237,7 +229,7 @@ export async function replaceInFile(
     return { success: false, linesAffected: 0, error: `File not found: ${filePath}` };
   }
 
-  // Try exact match first, then normalise line endings
+  
   const needle = content.includes(searchStr)
     ? searchStr
     : content.replace(/\r\n/g, "\n").includes(searchStr.replace(/\r\n/g, "\n"))
@@ -255,9 +247,7 @@ export async function replaceInFile(
   return { success: true, linesAffected: replaceStr.split("\n").length };
 }
 
-/**
- * Search for a pattern in a file, returning matching lines with context.
- */
+
 export async function searchInFile(
   filePath: string,
   pattern: string | RegExp,
@@ -277,7 +267,7 @@ export async function searchInFile(
   });
 }
 
-// ─── Health check ─────────────────────────────────────────────────────────────
+
 
 export async function healthCheck(url: string, timeout = 5000): Promise<boolean> {
   const controller = new AbortController();
@@ -292,7 +282,7 @@ export async function healthCheck(url: string, timeout = 5000): Promise<boolean>
   }
 }
 
-// ─── PM2 (optional — only relevant when not using Docker) ────────────────────
+
 
 export async function pm2Restart(serviceName: string): Promise<boolean> {
   try {

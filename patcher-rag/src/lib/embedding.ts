@@ -12,8 +12,8 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
   return extractor;
 }
 
-// RecursiveCharacterTextSplitter with "js" language uses JS-aware separators
-// (function boundaries, class declarations, blank lines) — pure JS, no native deps.
+
+
 const splitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
   chunkSize: 1500,
   chunkOverlap: 200,

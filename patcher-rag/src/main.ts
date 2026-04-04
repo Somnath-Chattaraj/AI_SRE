@@ -25,30 +25,30 @@ const HEALTH_CHECK_URL =
 const PORT = Number(process.env.PATCHER_PORT ?? 4000);
 const CLONE_BASE = process.env.CLONE_BASE ?? "/tmp/patcher";
 
-// ─── Shared singletons (initialized lazily) ───────────────────────────────────
+
 
 let patcher: Patcher | null = null;
 let ready = false;
 
-// ─── Per-incident workflow ────────────────────────────────────────────────────
-//
-//  1. Look up incident + service in DB
-//  2. git clone service.url_codebase → /tmp/patcher/{incidentId}/
-//  3. Index cloned source files into a per-service ChromaDB collection
-//  4. RAG: retrieve the most relevant code chunks for this incident
-//  5. LLM: generate precise search/replace patches
-//  6. Apply patches (exact string replacement — no full-file rewrites)
-//  7. git commit on a new branch, push, open a GitHub PR
-//  8. Health-check the running service (optional)
-//  9. Cleanup temp clone
-//
+
+
+
+
+
+
+
+
+
+
+
+
 async function processIncident(incidentId: string): Promise<void> {
   if (!patcher) {
     log("not_ready", incidentId);
     return;
   }
 
-  // ── Fetch incident ──────────────────────────────────────────────────────────
+  
   const incident = await prisma.incident.findUnique({
     where: { id: incidentId },
   });
@@ -61,7 +61,7 @@ async function processIncident(incidentId: string): Promise<void> {
     return;
   }
 
-  // Fetch service separately — avoids crash on broken MongoDB reference
+  
   const service = await prisma.service.findUnique({
     where: { id: incident.serviceId },
   });
@@ -97,13 +97,13 @@ async function processIncident(incidentId: string): Promise<void> {
   const cloneDir = path.join(CLONE_BASE, incidentId);
 
   try {
-    // ── 1. Clone ──────────────────────────────────────────────────────────────
+    
     log(`Cloning ${repoUrl}`, incidentId);
     await cloneRepo(repoUrl, cloneDir);
 
-    // ── 2. Index into a per-service ChromaDB collection ───────────────────────
-    //    Collection is named by serviceId so re-runs for the same service reuse
-    //    the same vector space (upsert is idempotent).
+    
+    
+    
     const collectionName = `service-${incident.serviceId}`;
     const store = new VectorStore();
     await store.init(collectionName);
@@ -116,7 +116,7 @@ async function processIncident(incidentId: string): Promise<void> {
       return;
     }
 
-    // ── 3. Retrieve relevant code chunks ──────────────────────────────────────
+    
     const retriever = new Retriever(store);
     const { chunks } = await retriever.retrieve(incidentReport);
     log(`Retrieved ${chunks.length} chunks`, incidentId);
@@ -126,7 +126,7 @@ async function processIncident(incidentId: string): Promise<void> {
       return;
     }
 
-    // ── 4. Generate patches ───────────────────────────────────────────────────
+    
     const patchResult = await patcher.generatePatch(incidentReport, chunks);
     if (patchResult.analysis) log(`Analysis: ${patchResult.analysis}`, incidentId);
     if (!patchResult.success) {
@@ -139,7 +139,7 @@ async function processIncident(incidentId: string): Promise<void> {
       return;
     }
 
-    // ── 5. Create patch branch ────────────────────────────────────────────────
+    
     const baseBranch = await gitCurrentBranch(cloneDir);
     const patchBranch = `patch/${incidentId}`;
     if (!(await gitEnsureBranch(patchBranch, cloneDir))) {
@@ -147,15 +147,15 @@ async function processIncident(incidentId: string): Promise<void> {
       return;
     }
 
-    // ── 6. Apply search/replace patches ──────────────────────────────────────
+    
     const appliedFiles: string[] = [];
     for (const patch of patchResult.patches) {
-      // LLM returns relative paths (e.g. "src/utils.js") — resolve inside clone
+      
       const targetPath = path.isAbsolute(patch.filePath)
         ? patch.filePath
         : path.join(cloneDir, patch.filePath);
 
-      // Security: prevent path traversal outside the clone directory
+      
       const resolvedTarget = path.resolve(targetPath);
       const resolvedClone = path.resolve(cloneDir);
       if (!resolvedTarget.startsWith(resolvedClone + path.sep)) {
@@ -187,7 +187,7 @@ async function processIncident(incidentId: string): Promise<void> {
       appliedFiles.push(targetPath);
     }
 
-    // ── 7. Commit ─────────────────────────────────────────────────────────────
+    
     const commitResult = await gitCommit(
       appliedFiles,
       `fix(patcher): resolve ${incident.type} incident ${incidentId}`,
@@ -196,14 +196,14 @@ async function processIncident(incidentId: string): Promise<void> {
     if (!commitResult.success)
       log(`git commit warning: ${commitResult.message}`, incidentId);
 
-    // ── 8. Health check (best-effort, doesn't block the PR) ──────────────────
+    
     const healthy = await healthCheck(HEALTH_CHECK_URL);
     log(`health_check=${healthy}`, incidentId);
 
-    // ── 9. Generate diff for PR body ──────────────────────────────────────────
+    
     const diff = await gitDiffHead(cloneDir);
 
-    // ── 10. Push + open PR ────────────────────────────────────────────────────
+    
     const patchLines = patchResult.patches.map(
       (p) => `- \`${p.filePath}\` — ${p.rationale}`,
     );
@@ -239,7 +239,7 @@ async function processIncident(incidentId: string): Promise<void> {
       repoDir: cloneDir,
     });
 
-    // Save patch details + PR URL back to DB for the frontend
+    
     const patchSummary = patchResult.patches.map((p) => ({
       filePath: p.filePath,
       rationale: p.rationale,
@@ -269,7 +269,7 @@ async function processIncident(incidentId: string): Promise<void> {
     log(`unexpected_error=${err}`, incidentId);
     await finish(incidentId, "failed", String(err));
   } finally {
-    // Always clean up the clone
+    
     await cleanupRepo(cloneDir);
     log("clone_cleaned_up", incidentId);
   }
@@ -298,20 +298,20 @@ async function finish(
   log(`${status}${error ? ` reason=${error}` : ""}`, incidentId);
 }
 
-// ─── Background initializer ───────────────────────────────────────────────────
+
 
 async function initializeWithRetry(apiKey: string): Promise<void> {
   while (true) {
     try {
       log("Connecting to ChromaDB Cloud...");
-      // Probe connectivity by creating a throwaway VectorStore
+      
       const probe = new VectorStore();
       await probe.init("healthprobe");
       patcher = new Patcher(apiKey);
       ready = true;
       log("Service fully initialized and ready");
 
-      // Reset stuck incidents from a previous crash
+      
       const stuck = await prisma.incident.findMany({
         where: { patchStatus: "PROCESSING" },
         select: { id: true },
@@ -331,7 +331,7 @@ async function initializeWithRetry(apiKey: string): Promise<void> {
   }
 }
 
-// ─── HTTP server ──────────────────────────────────────────────────────────────
+
 
 async function main() {
   const apiKey = process.env.CEREBRAS_API_KEY;
@@ -340,7 +340,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Bind port immediately — Docker healthcheck needs this
+  
   Bun.serve({
     port: PORT,
     routes: {

@@ -1,6 +1,6 @@
-// ============================================================
-// AutoHeal – Mock Data Layer
-// ============================================================
+
+
+
 
 export type ServiceStatus = "healthy" | "warning" | "critical" | "unknown";
 export type IncidentSeverity = "low" | "medium" | "high" | "critical";
@@ -15,8 +15,8 @@ export interface Service {
   avgLatency: number;
   errorRate: number;
   lastChecked: string;
-  monitoringInterval: number; // seconds
-  alertThreshold: number; // ms
+  monitoringInterval: number; 
+  alertThreshold: number; 
   activeIncidents: number;
   description?: string;
 }
@@ -93,7 +93,7 @@ export interface LogEntry {
   serviceId: string;
 }
 
-// ─── Helper Generators ───────────────────────────────────────
+
 function generateTimeSeries(
   hours: number,
   baseValue: number,
@@ -117,12 +117,12 @@ function generateTimeSeries(
   return points;
 }
 
-// ─── Services ────────────────────────────────────────────────
+
 export const services: Service[] = [
   {
     id: "svc-1",
     name: "Auth-Gateway-V2",
-    endpoint: "https://api.autoheal.io/auth",
+    endpoint: "https://api.opsmith.io/auth",
     status: "healthy",
     uptime: 99.982,
     avgLatency: 42,
@@ -136,7 +136,7 @@ export const services: Service[] = [
   {
     id: "svc-2",
     name: "Payment-API",
-    endpoint: "https://api.autoheal.io/payments",
+    endpoint: "https://api.opsmith.io/payments",
     status: "critical",
     uptime: 98.2,
     avgLatency: 342,
@@ -150,7 +150,7 @@ export const services: Service[] = [
   {
     id: "svc-3",
     name: "Postgres-Main-Replica",
-    endpoint: "https://db-monitor.autoheal.io/pg-main",
+    endpoint: "https://db-monitor.opsmith.io/pg-main",
     status: "warning",
     uptime: 99.7,
     avgLatency: 89,
@@ -164,7 +164,7 @@ export const services: Service[] = [
   {
     id: "svc-4",
     name: "Image-Processing-Node",
-    endpoint: "https://api.autoheal.io/images",
+    endpoint: "https://api.opsmith.io/images",
     status: "healthy",
     uptime: 99.95,
     avgLatency: 156,
@@ -178,7 +178,7 @@ export const services: Service[] = [
   {
     id: "svc-5",
     name: "Billing-Service-Internal",
-    endpoint: "https://internal.autoheal.io/billing",
+    endpoint: "https://internal.opsmith.io/billing",
     status: "healthy",
     uptime: 99.99,
     avgLatency: 28,
@@ -192,7 +192,7 @@ export const services: Service[] = [
   {
     id: "svc-6",
     name: "Email-Relay-SaaS",
-    endpoint: "https://api.autoheal.io/email",
+    endpoint: "https://api.opsmith.io/email",
     status: "warning",
     uptime: 99.4,
     avgLatency: 210,
@@ -205,7 +205,7 @@ export const services: Service[] = [
   },
 ];
 
-// ─── Metrics Time-Series ─────────────────────────────────────
+
 export const latencyTimeSeries: TimeSeriesData[] = [
   { label: "Auth-Gateway", data: generateTimeSeries(24, 42, 15), color: "#8b5cf6" },
   { label: "Payment-API", data: generateTimeSeries(24, 340, 120, [200, 400, 600]), color: "#ef4444" },
@@ -224,7 +224,7 @@ export const successRateTimeSeries: TimeSeriesData[] = [
   { label: "Postgres-Main", data: generateTimeSeries(24, 99.2, 0.5), color: "#f59e0b" },
 ];
 
-// ─── Recent AI Actions ───────────────────────────────────────
+
 export const aiActions: AIAction[] = [
   {
     id: "act-1",
@@ -279,7 +279,7 @@ export const aiActions: AIAction[] = [
   },
 ];
 
-// ─── Incidents ───────────────────────────────────────────────
+
 export const incidents: Incident[] = [
   {
     id: "inc-1",
@@ -334,13 +334,13 @@ export const incidents: Incident[] = [
     detectedAt: new Date(Date.now() - 1200000).toISOString(),
     resolvedAt: new Date(Date.now() - 600000).toISOString(),
     aiAnalysis:
-      "Rate limit approach was caused by a marketing campaign triggering bulk email sends during peak transactional email hours. AutoHeal automatically adjusted the queue concurrency and enabled Postmark fallback routing.",
+      "Rate limit approach was caused by a marketing campaign triggering bulk email sends during peak transactional email hours. OpSmith automatically adjusted the queue concurrency and enabled Postmark fallback routing.",
     rootCause: "Concurrent marketing + transactional email volume exceeding single-provider capacity.",
     confidence: 98,
   },
 ];
 
-// ─── Pull Requests ───────────────────────────────────────────
+
 export const pullRequests: PullRequest[] = [
   {
     id: "pr-42",
@@ -378,7 +378,7 @@ export const pullRequests: PullRequest[] = [
 +    metrics.poolActiveConnections.dec();
    }
  }`,
-    githubUrl: "https://github.com/autoheal/payment-api/pull/42",
+    githubUrl: "https://github.com/opsmith/payment-api/pull/42",
     createdAt: new Date(Date.now() - 240000).toISOString(),
     filesChanged: 3,
     additions: 12,
@@ -408,7 +408,7 @@ export const pullRequests: PullRequest[] = [
    } finally {
      client.release();
    }`,
-    githubUrl: "https://github.com/autoheal/postgres-monitor/pull/41",
+    githubUrl: "https://github.com/opsmith/postgres-monitor/pull/41",
     createdAt: new Date(Date.now() - 900000).toISOString(),
     mergedAt: new Date(Date.now() - 600000).toISOString(),
     filesChanged: 2,
@@ -444,7 +444,7 @@ export const pullRequests: PullRequest[] = [
 +    return this.send('sendgrid', email);
 +  }
  }`,
-    githubUrl: "https://github.com/autoheal/email-relay/pull/40",
+    githubUrl: "https://github.com/opsmith/email-relay/pull/40",
     createdAt: new Date(Date.now() - 1800000).toISOString(),
     mergedAt: new Date(Date.now() - 1200000).toISOString(),
     filesChanged: 5,
@@ -480,7 +480,7 @@ export const pullRequests: PullRequest[] = [
 +  }
    return validated;
  }`,
-    githubUrl: "https://github.com/autoheal/payment-api/pull/39",
+    githubUrl: "https://github.com/opsmith/payment-api/pull/39",
     createdAt: new Date(Date.now() - 3600000).toISOString(),
     filesChanged: 1,
     additions: 10,
@@ -488,7 +488,7 @@ export const pullRequests: PullRequest[] = [
   },
 ];
 
-// ─── Notifications ───────────────────────────────────────────
+
 export const notifications: Notification[] = [
   {
     id: "notif-1",
@@ -503,7 +503,7 @@ export const notifications: Notification[] = [
     id: "notif-2",
     type: "success",
     title: "PR #42 Created",
-    message: "AutoHeal generated a fix for the connection pool leak.",
+    message: "OpSmith generated a fix for the connection pool leak.",
     timestamp: new Date(Date.now() - 240000).toISOString(),
     read: false,
     serviceId: "svc-2",
@@ -537,7 +537,7 @@ export const notifications: Notification[] = [
   },
 ];
 
-// ─── Log Entries (for Service Detail) ────────────────────────
+
 export function generateLogs(serviceId: string): LogEntry[] {
   const levels: LogEntry["level"][] = ["info", "warn", "error", "debug"];
   const messages: Record<string, string[]> = {
@@ -594,7 +594,7 @@ export function generateLogs(serviceId: string): LogEntry[] {
       ? "error"
       : msg.startsWith("WARNING")
         ? "warn"
-        : levels[Math.floor(Math.random() * 3)]; // bias toward info
+        : levels[Math.floor(Math.random() * 3)]; 
     logs.push({
       id: `log-${serviceId}-${i}`,
       timestamp: new Date(Date.now() - i * 120000 + Math.random() * 60000).toISOString(),

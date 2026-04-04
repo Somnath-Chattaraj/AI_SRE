@@ -1,6 +1,6 @@
-// ============================================================
-// AutoHeal – Mock API (simulates backend calls)
-// ============================================================
+
+
+
 
 import {
   services as mockServices,
@@ -21,11 +21,11 @@ import {
   type LogEntry,
 } from "./mock-data"
 
-// Simulate network latency
+
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 const randomDelay = () => delay(200 + Math.random() * 400)
 
-// ─── Services ────────────────────────────────────────────────
+
 let _services = [...mockServices]
 
 export async function fetchServices(): Promise<Service[]> {
@@ -83,7 +83,7 @@ export async function deleteService(id: string): Promise<boolean> {
   return _services.length < len
 }
 
-// ─── Metrics ─────────────────────────────────────────────────
+
 export async function fetchLatencyTimeSeries(): Promise<TimeSeriesData[]> {
   await randomDelay()
   return latencyTimeSeries
@@ -136,7 +136,7 @@ export async function fetchServiceMetrics(serviceId: string): Promise<{
   }
 }
 
-// ─── Incidents ───────────────────────────────────────────────
+
 export async function fetchIncidents(): Promise<Incident[]> {
   await randomDelay()
   return mockIncidents
@@ -149,7 +149,7 @@ export async function fetchIncidentsByService(
   return mockIncidents.filter((i) => i.serviceId === serviceId)
 }
 
-// ─── Pull Requests ───────────────────────────────────────────
+
 export async function fetchPullRequests(): Promise<PullRequest[]> {
   await randomDelay()
   return mockPRs
@@ -162,13 +162,13 @@ export async function fetchPullRequestsByService(
   return mockPRs.filter((pr) => pr.serviceId === serviceId)
 }
 
-// ─── AI Actions ──────────────────────────────────────────────
+
 export async function fetchAIActions(): Promise<AIAction[]> {
   await randomDelay()
   return mockAIActions
 }
 
-// ─── Notifications ───────────────────────────────────────────
+
 let _notifications = [...mockNotifications]
 
 export async function fetchNotifications(): Promise<Notification[]> {
@@ -188,13 +188,13 @@ export async function markAllNotificationsRead(): Promise<void> {
   _notifications = _notifications.map((n) => ({ ...n, read: true }))
 }
 
-// ─── Logs ────────────────────────────────────────────────────
+
 export async function fetchServiceLogs(serviceId: string): Promise<LogEntry[]> {
   await randomDelay()
   return generateLogs(serviceId)
 }
 
-// ─── Dashboard Aggregates ────────────────────────────────────
+
 export interface DashboardStats {
   totalServices: number
   avgUptime: number
@@ -229,7 +229,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   }
 }
 
-// ─── Auth (mock) ─────────────────────────────────────────────
+
 export interface User {
   id: string
   name: string

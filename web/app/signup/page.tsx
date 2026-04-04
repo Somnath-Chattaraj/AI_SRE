@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { IconLoader2, IconShieldCheck } from "@tabler/icons-react";
+import { IconLoader2, IconHammer } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth-client";
 import { useAppStore } from "@/lib/store";
+import { Particles } from "@/components/ui/particles";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -61,114 +62,89 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[hsl(220,13%,7%)]">
-      <div className="w-full max-w-[380px] px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-[#09090b] overflow-hidden">
+      <Particles
+        className="absolute inset-0"
+        quantity={40}
+        color="#818cf8"
+        ease={80}
+        size={0.5}
+        staticity={50}
+        refresh
+      />
+      <div className="absolute top-1/3 left-1/3 h-[300px] w-[300px] rounded-full bg-[#818cf8]/5 blur-[100px]" />
+
+      <div className="relative w-full max-w-[380px] px-4">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[hsl(220,13%,18%)] bg-[hsl(220,13%,11%)]">
-            <IconShieldCheck className="h-5 w-5 text-[hsl(220,10%,65%)]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl os-gradient shadow-lg shadow-[#818cf8]/20">
+            <IconHammer className="h-6 w-6 text-white" />
           </div>
           <div className="text-center">
             <h1 className="text-lg font-semibold tracking-tight text-white">
               Create account
             </h1>
-            <p className="mt-0.5 text-sm text-[hsl(220,10%,42%)]">
-              Get started with AutoHeal
+            <p className="mt-0.5 text-sm text-[#52525b]">
+              Get started with OpSmith
             </p>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="name"
-              className="text-xs font-medium text-[hsl(220,10%,55%)]"
-            >
-              Full name
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Alex Chen"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)] focus-visible:ring-[hsl(220,10%,30%)]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="email"
-              className="text-xs font-medium text-[hsl(220,10%,55%)]"
-            >
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)] focus-visible:ring-[hsl(220,10%,30%)]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="password"
-              className="text-xs font-medium text-[hsl(220,10%,55%)]"
-            >
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)] focus-visible:ring-[hsl(220,10%,30%)]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="confirm"
-              className="text-xs font-medium text-[hsl(220,10%,55%)]"
-            >
-              Confirm password
-            </Label>
-            <Input
-              id="confirm"
-              type="password"
-              placeholder="••••••••"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="border-[hsl(220,13%,16%)] bg-[hsl(220,13%,10%)] text-sm text-white placeholder:text-[hsl(220,10%,30%)] focus-visible:ring-[hsl(220,10%,30%)]"
-            />
-          </div>
+        <div className="rounded-xl p-6 glass-strong">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-xs font-medium text-[#71717a]">Full name</Label>
+              <Input
+                id="name" type="text" placeholder="Alex Chen"
+                value={name} onChange={(e) => setName(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs font-medium text-[#71717a]">Email</Label>
+              <Input
+                id="email" type="email" placeholder="you@company.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-medium text-[#71717a]">Password</Label>
+              <Input
+                id="password" type="password" placeholder="min. 8 characters"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirm" className="text-xs font-medium text-[#71717a]">Confirm password</Label>
+              <Input
+                id="confirm" type="password" placeholder="••••••••"
+                value={confirm} onChange={(e) => setConfirm(e.target.value)}
+                className="border-[#27272a] bg-[#111113] text-sm text-white placeholder:text-[#3f3f46]"
+              />
+            </div>
 
-          {error && (
-            <p className="rounded-md border border-[hsl(0,60%,30%)] bg-[hsl(0,60%,12%)] px-3 py-2 text-xs text-[hsl(0,72%,65%)]">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p className="rounded-lg border border-[#f87171]/20 bg-[#f87171]/5 px-3 py-2 text-xs text-[#f87171]">
+                {error}
+              </p>
+            )}
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="mt-1 w-full border border-[hsl(220,13%,22%)] bg-[hsl(220,13%,14%)] text-sm text-white hover:bg-[hsl(220,13%,18%)] disabled:opacity-50"
-          >
-            {loading ? (
-              <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Create account
-          </Button>
-        </form>
+            <Button
+              type="submit" disabled={loading}
+              className="mt-1 w-full os-gradient text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 border-0 shadow-lg shadow-[#818cf8]/10"
+            >
+              {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create account
+            </Button>
+          </form>
+        </div>
 
-        <p className="mt-5 text-center text-xs text-[hsl(220,10%,38%)]">
+        <p className="mt-5 text-center text-xs text-[#52525b]">
           Already have an account?{" "}
-          <Link
-            href="/"
-            className="text-[hsl(220,10%,60%)] underline-offset-2 hover:underline"
-          >
+          <Link href="/" className="text-[#818cf8] underline-offset-2 hover:underline">
             Sign in
           </Link>
         </p>

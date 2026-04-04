@@ -44,26 +44,26 @@ export default function InsightsPage() {
   }, []);
 
   const severityColors: Record<string, { color: string; bg: string }> = {
-    low: { color: "hsl(199, 89%, 55%)", bg: "hsl(199, 89%, 48%)" },
-    medium: { color: "hsl(38, 92%, 55%)", bg: "hsl(38, 92%, 50%)" },
-    high: { color: "hsl(0, 72%, 60%)", bg: "hsl(0, 72%, 51%)" },
-    critical: { color: "hsl(0, 72%, 51%)", bg: "hsl(0, 72%, 45%)" },
+    low: { color: "#60a5fa", bg: "#60a5fa" },
+    medium: { color: "#fbbf24", bg: "#fbbf24" },
+    high: { color: "#f87171", bg: "#f87171" },
+    critical: { color: "#ef4444", bg: "#ef4444" },
   };
 
   const actionIcon = (type: string) => {
     switch (type) {
       case "bug_detected":
-        return <IconBug className="h-4 w-4 text-[hsl(0,72%,60%)]" />;
+        return <IconBug className="h-4 w-4 text-[#f87171]" />;
       case "anomaly_detected":
-        return <IconAlertTriangle className="h-4 w-4 text-[hsl(38,92%,55%)]" />;
+        return <IconAlertTriangle className="h-4 w-4 text-[#fbbf24]" />;
       case "fix_generated":
-        return <IconSparkles className="h-4 w-4 text-[hsl(199,89%,55%)]" />;
+        return <IconSparkles className="h-4 w-4 text-[#60a5fa]" />;
       case "pr_created":
-        return <IconShieldCheck className="h-4 w-4 text-[hsl(265,90%,70%)]" />;
+        return <IconShieldCheck className="h-4 w-4 text-[#818cf8]" />;
       case "auto_resolved":
-        return <IconShieldCheck className="h-4 w-4 text-[hsl(142,71%,55%)]" />;
+        return <IconShieldCheck className="h-4 w-4 text-[#34d399]" />;
       default:
-        return <IconBrain className="h-4 w-4 text-[hsl(265,90%,70%)]" />;
+        return <IconBrain className="h-4 w-4 text-[#818cf8]" />;
     }
   };
 
@@ -80,8 +80,8 @@ export default function InsightsPage() {
   return (
     <>
       <TopBar
-        title="AI Insights"
-        subtitle="Automated anomaly detection and root cause analysis"
+        title="Insights"
+        subtitle="Anomaly detection and root cause analysis"
       />
 
       <div className="p-6">
@@ -95,7 +95,7 @@ export default function InsightsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[100px] rounded-xl bg-[hsl(225,15%,12%)]" />
+                <Skeleton key={i} className="h-[100px] rounded-xl bg-[#18181b]" />
               ))
             ) : (
               <>
@@ -104,7 +104,7 @@ export default function InsightsPage() {
                     label="Total Anomalies"
                     value={incidents.length.toString()}
                     icon={<IconTarget className="h-5 w-5" />}
-                    color="hsl(265, 90%, 65%)"
+                    color="#818cf8"
                   />
                 </motion.div>
                 <motion.div variants={item}>
@@ -112,7 +112,7 @@ export default function InsightsPage() {
                     label="Critical Issues"
                     value={incidents.filter((i) => i.severity === "critical").length.toString()}
                     icon={<IconAlertTriangle className="h-5 w-5" />}
-                    color="hsl(0, 72%, 51%)"
+                    color="#f87171"
                   />
                 </motion.div>
                 <motion.div variants={item}>
@@ -120,7 +120,7 @@ export default function InsightsPage() {
                     label="Auto-Resolved"
                     value={incidents.filter((i) => i.status === "resolved").length.toString()}
                     icon={<IconShieldCheck className="h-5 w-5" />}
-                    color="hsl(142, 71%, 45%)"
+                    color="#34d399"
                   />
                 </motion.div>
                 <motion.div variants={item}>
@@ -128,7 +128,7 @@ export default function InsightsPage() {
                     label="AI Actions Today"
                     value={actions.length.toString()}
                     icon={<IconChartBar className="h-5 w-5" />}
-                    color="hsl(199, 89%, 48%)"
+                    color="#60a5fa"
                   />
                 </motion.div>
               </>
@@ -140,37 +140,37 @@ export default function InsightsPage() {
             {/* AI Actions Timeline */}
             <motion.div
               variants={item}
-              className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 lg:col-span-1"
+              className="rounded-xl bg-[#111113] p-5 lg:col-span-1"
+              style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
             >
               <div className="mb-4 flex items-center gap-2">
-                <IconSparkles className="h-4 w-4 text-[hsl(265,90%,70%)]" />
+                <IconSparkles className="h-4 w-4 text-[#818cf8]" />
                 <h3 className="text-sm font-semibold text-white">AI Activity Timeline</h3>
               </div>
 
               {loading ? (
                 <div className="space-y-4">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 rounded-lg bg-[hsl(225,15%,12%)]" />
+                    <Skeleton key={i} className="h-14 rounded-lg bg-[#18181b]" />
                   ))}
                 </div>
               ) : (
                 <div className="space-y-1">
                   {actions.map((action, idx) => (
                     <div key={action.id} className="flex gap-3">
-                      {/* Timeline Line */}
                       <div className="flex flex-col items-center">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(220,14%,14%)]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#18181b]">
                           {actionIcon(action.type)}
                         </div>
                         {idx < actions.length - 1 && (
-                          <div className="w-px flex-1 bg-[hsl(220,14%,16%)]" />
+                          <div className="w-px flex-1 bg-[#27272a]" />
                         )}
                       </div>
                       <div className="pb-5 min-w-0">
-                        <p className="text-xs text-[hsl(220,10%,75%)] line-clamp-2">
+                        <p className="text-xs text-[#d4d4d8] line-clamp-2">
                           {action.message}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-[hsl(220,10%,40%)]">
+                        <p className="mt-0.5 text-[10px] text-[#52525b]">
                           {action.serviceName} · {timeAgo(action.timestamp)}
                         </p>
                       </div>
@@ -180,7 +180,7 @@ export default function InsightsPage() {
               )}
             </motion.div>
 
-            {/* Detailed Insights */}
+            {/* Detected Anomalies */}
             <motion.div
               variants={item}
               className="space-y-4 lg:col-span-2"
@@ -192,32 +192,30 @@ export default function InsightsPage() {
               {loading ? (
                 <div className="space-y-4">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[220px] rounded-xl bg-[hsl(225,15%,12%)]" />
+                    <Skeleton key={i} className="h-[220px] rounded-xl bg-[#18181b]" />
                   ))}
                 </div>
               ) : (
                 incidents.map((inc) => (
                   <div
                     key={inc.id}
-                    className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 transition-colors hover:border-[hsl(220,14%,22%)]"
+                    className="rounded-xl bg-[#111113] p-5 transition-colors hover:bg-[#151517]"
+                    style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
                   >
-                    {/* Header */}
                     <div className="mb-3 flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <div
                           className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg"
-                          style={{
-                            backgroundColor: `${severityColors[inc.severity].bg}15`,
-                          }}
+                          style={{ backgroundColor: `${severityColors[inc.severity]?.bg ?? '#818cf8'}15` }}
                         >
                           <IconAlertTriangle
                             className="h-4 w-4"
-                            style={{ color: severityColors[inc.severity].color }}
+                            style={{ color: severityColors[inc.severity]?.color ?? '#818cf8' }}
                           />
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold text-white">{inc.title}</h4>
-                          <p className="mt-0.5 text-xs text-[hsl(220,10%,50%)]">
+                          <p className="mt-0.5 text-xs text-[#52525b]">
                             {inc.serviceName} · {timeAgo(inc.detectedAt)}
                           </p>
                         </div>
@@ -226,8 +224,8 @@ export default function InsightsPage() {
                         <Badge
                           className="border-transparent text-[10px]"
                           style={{
-                            color: severityColors[inc.severity].color,
-                            backgroundColor: `${severityColors[inc.severity].bg}15`,
+                            color: severityColors[inc.severity]?.color ?? '#818cf8',
+                            backgroundColor: `${severityColors[inc.severity]?.bg ?? '#818cf8'}15`,
                           }}
                         >
                           {inc.severity}
@@ -236,8 +234,8 @@ export default function InsightsPage() {
                           variant="outline"
                           className={`text-[10px] ${
                             inc.status === "resolved"
-                              ? "border-[hsl(142,71%,45%)/30%] text-[hsl(142,71%,55%)]"
-                              : "border-[hsl(38,92%,50%)/30%] text-[hsl(38,92%,55%)]"
+                              ? "border-[#34d399]/20 text-[#34d399]"
+                              : "border-[#fbbf24]/20 text-[#fbbf24]"
                           }`}
                         >
                           {inc.status}
@@ -245,74 +243,52 @@ export default function InsightsPage() {
                       </div>
                     </div>
 
-                    {/* Description */}
-                    <p className="mb-3 text-xs text-[hsl(220,10%,60%)]">{inc.description}</p>
+                    <p className="mb-3 text-xs text-[#71717a]">{inc.description}</p>
 
-                    {/* AI Analysis */}
                     {inc.aiAnalysis && (
-                      <div className="mb-3 rounded-lg border border-[hsl(265,90%,65%)/15%] bg-[hsl(265,90%,65%)/5%] p-3">
+                      <div className="mb-3 rounded-lg p-3" style={{ background: 'rgba(129, 140, 248, 0.05)', border: '1px solid rgba(129, 140, 248, 0.1)' }}>
                         <div className="mb-1.5 flex items-center gap-1.5">
-                          <IconBrain className="h-3.5 w-3.5 text-[hsl(265,90%,70%)]" />
-                          <span className="text-[10px] font-semibold text-[hsl(265,90%,75%)]">
-                            AI Explanation
-                          </span>
+                          <IconBrain className="h-3.5 w-3.5 text-[#818cf8]" />
+                          <span className="text-[10px] font-semibold text-[#a5b4fc]">AI Explanation</span>
                         </div>
-                        <p className="text-xs leading-relaxed text-[hsl(220,10%,70%)]">
-                          {inc.aiAnalysis}
-                        </p>
+                        <p className="text-xs leading-relaxed text-[#a1a1aa]">{inc.aiAnalysis}</p>
                       </div>
                     )}
 
-                    {/* Root Cause + Confidence */}
                     <div className="flex items-center justify-between">
                       {inc.rootCause && (
                         <div className="flex-1 mr-4">
-                          <p className="text-[10px] font-semibold uppercase text-[hsl(0,72%,55%)]">
-                            Root Cause
-                          </p>
-                          <p className="mt-0.5 font-mono text-[11px] text-[hsl(220,10%,60%)] line-clamp-1">
-                            {inc.rootCause}
-                          </p>
+                          <p className="text-[10px] font-semibold uppercase text-[#f87171]">Root Cause</p>
+                          <p className="mt-0.5 font-mono text-[11px] text-[#71717a] line-clamp-1">{inc.rootCause}</p>
                         </div>
                       )}
                       {inc.confidence && (
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="h-1.5 w-16 rounded-full bg-[hsl(220,14%,16%)]">
-                            <div
-                              className="h-full rounded-full bg-[hsl(265,90%,65%)]"
-                              style={{ width: `${inc.confidence}%` }}
-                            />
+                          <div className="h-1.5 w-16 rounded-full bg-[#18181b]">
+                            <div className="h-full rounded-full bg-[#818cf8]" style={{ width: `${inc.confidence}%` }} />
                           </div>
-                          <span className="text-[10px] font-medium text-[hsl(265,90%,75%)]">
-                            {inc.confidence}%
-                          </span>
+                          <span className="text-[10px] font-medium text-[#a5b4fc]">{inc.confidence}%</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Patches applied */}
                     {inc.patches && inc.patches.length > 0 && (
-                      <div className="mt-3 rounded-lg bg-[hsl(220,14%,10%)] p-3">
+                      <div className="mt-3 rounded-lg bg-[#0c0c0e] p-3">
                         <div className="mb-1.5 flex items-center gap-1.5">
-                          <IconCode className="h-3.5 w-3.5 text-[hsl(142,71%,55%)]" />
-                          <span className="text-[10px] font-semibold text-[hsl(142,71%,65%)]">
-                            Files Patched ({inc.patches.length})
-                          </span>
+                          <IconCode className="h-3.5 w-3.5 text-[#34d399]" />
+                          <span className="text-[10px] font-semibold text-[#34d399]">Files Patched ({inc.patches.length})</span>
                         </div>
                         <div className="space-y-1">
                           {inc.patches.map((p, i) => (
-                            <p key={i} className="font-mono text-[11px] text-[hsl(199,89%,60%)]">
-                              {p.filePath}
-                            </p>
+                            <p key={i} className="font-mono text-[11px] text-[#60a5fa]">{p.filePath}</p>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* View in Service */}
                     <Link
                       href={`/dashboard/services/${inc.serviceId}`}
-                      className="mt-3 inline-flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] hover:underline"
+                      className="mt-3 inline-flex items-center gap-1 text-xs text-[#818cf8] hover:underline"
                     >
                       View in service detail <IconArrowRight className="h-3 w-3" />
                     </Link>
@@ -339,14 +315,16 @@ function InsightCard({
   color: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 transition-all duration-300 hover:border-[hsl(220,14%,22%)]">
+    <div className="group relative overflow-hidden rounded-xl bg-[#111113] p-5 transition-all duration-300 hover:bg-[#151517]"
+      style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
+    >
       <div
         className="absolute -right-4 -top-4 h-16 w-16 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
         style={{ backgroundColor: color }}
       />
       <div className="relative flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-[hsl(220,10%,50%)]">{label}</p>
+          <p className="text-xs font-medium text-[#52525b]">{label}</p>
           <p className="mt-1 font-heading text-2xl font-bold text-white">{value}</p>
         </div>
         <div

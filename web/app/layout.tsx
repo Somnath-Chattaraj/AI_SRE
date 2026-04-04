@@ -10,7 +10,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "AutoHeal — AI-Powered Self-Healing Platform",
+  title: "OpSmith — AI-Powered Operations Platform",
   description:
     "Intelligent blackbox monitoring with automated anomaly detection, root cause analysis, and self-healing via AI-generated pull requests.",
   keywords: ["monitoring", "AI", "self-healing", "DevOps", "observability", "SRE"],

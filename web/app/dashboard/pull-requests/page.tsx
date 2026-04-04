@@ -19,23 +19,23 @@ type PRStatus = "open" | "investigating" | "resolved" | "failed";
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
   open: {
-    color: "hsl(38, 92%, 55%)",
-    bg: "hsl(38, 92%, 50%)",
+    color: "#fbbf24",
+    bg: "#fbbf24",
     icon: <IconClock className="h-4 w-4" />,
   },
   resolved: {
-    color: "hsl(142, 71%, 55%)",
-    bg: "hsl(142, 71%, 45%)",
+    color: "#34d399",
+    bg: "#34d399",
     icon: <IconGitMerge className="h-4 w-4" />,
   },
   failed: {
-    color: "hsl(0, 72%, 60%)",
-    bg: "hsl(0, 72%, 51%)",
+    color: "#f87171",
+    bg: "#f87171",
     icon: <IconX className="h-4 w-4" />,
   },
   investigating: {
-    color: "hsl(265, 90%, 70%)",
-    bg: "hsl(265, 90%, 65%)",
+    color: "#818cf8",
+    bg: "#818cf8",
     icon: <IconEye className="h-4 w-4" />,
   },
 };
@@ -94,31 +94,23 @@ export default function PullRequestsPage() {
           animate="show"
           className="space-y-6"
         >
-          {/* Summary */}
-          <motion.div variants={item} className="flex flex-wrap items-center gap-3">
+          {/* Filter pills */}
+          <motion.div variants={item} className="flex flex-wrap items-center gap-2">
             {(["all", "open", "investigating", "resolved", "failed"] as const).map((f) => {
-              const count =
-                f === "all"
-                  ? prs.length
-                  : prs.filter((p) => p.status === f).length;
+              const count = f === "all" ? prs.length : prs.filter((p) => p.status === f).length;
               const isActive = filter === f;
               return (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-medium transition-all ${
                     isActive
-                      ? "border-[hsl(265,90%,65%)/30%] bg-[hsl(265,90%,65%)/10%] text-[hsl(265,90%,75%)]"
-                      : "border-[hsl(220,14%,18%)] bg-[hsl(225,15%,10%)] text-[hsl(220,10%,55%)] hover:border-[hsl(220,14%,24%)] hover:text-white"
+                      ? "border-[#818cf8]/20 bg-[#818cf8]/10 text-[#a5b4fc]"
+                      : "border-[#27272a] bg-[#111113] text-[#71717a] hover:border-[#3f3f46] hover:text-white"
                   }`}
                 >
                   {f !== "all" && statusConfig[f] && (
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        backgroundColor: statusConfig[f].bg,
-                      }}
-                    />
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: statusConfig[f].bg }} />
                   )}
                   {f.charAt(0).toUpperCase() + f.slice(1)} ({count})
                 </button>
@@ -130,11 +122,11 @@ export default function PullRequestsPage() {
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[150px] rounded-xl bg-[hsl(225,15%,12%)]" />
+                <Skeleton key={i} className="h-[150px] rounded-xl bg-[#18181b]" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[hsl(220,10%,45%)]">
+            <div className="flex flex-col items-center justify-center py-20 text-[#52525b]">
               <IconGitPullRequest className="mb-3 h-12 w-12 opacity-30" />
               <p className="text-lg font-medium text-white">No pull requests found</p>
               <p className="mt-1 text-sm">No AI-generated fixes match this filter</p>
@@ -144,7 +136,9 @@ export default function PullRequestsPage() {
               const cfg = statusConfig[pr.status] ?? statusConfig.open;
               return (
                 <motion.div key={pr.id} variants={item}>
-                  <div className="rounded-xl border border-[hsl(220,14%,16%)] bg-[hsl(225,15%,10%)] p-5 transition-colors hover:border-[hsl(220,14%,22%)]">
+                  <div className="rounded-xl bg-[#111113] p-5 transition-colors hover:bg-[#151517]"
+                    style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <div
@@ -155,12 +149,12 @@ export default function PullRequestsPage() {
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold text-white">{pr.title}</h3>
-                          <p className="mt-0.5 text-xs text-[hsl(220,10%,50%)]">
+                          <p className="mt-0.5 text-xs text-[#52525b]">
                             {pr.serviceName} · Detected {timeAgo(pr.detectedAt)}
                             {pr.resolvedAt && ` · Resolved ${timeAgo(pr.resolvedAt)}`}
                           </p>
                           {pr.description && (
-                            <p className="mt-1.5 text-xs text-[hsl(220,10%,60%)]">{pr.description}</p>
+                            <p className="mt-1.5 text-xs text-[#71717a]">{pr.description}</p>
                           )}
                         </div>
                       </div>
@@ -178,7 +172,7 @@ export default function PullRequestsPage() {
                           href={pr.prUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-[hsl(265,90%,70%)] transition-colors hover:text-[hsl(265,90%,80%)]"
+                          className="flex items-center gap-1 text-xs text-[#818cf8] transition-colors hover:text-[#a5b4fc]"
                         >
                           <IconExternalLink className="h-3 w-3" />
                           View Pull Request on GitHub
