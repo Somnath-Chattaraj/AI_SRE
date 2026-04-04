@@ -30,16 +30,16 @@ export async function checkServiceForAnomalies(serviceId: string) {
       return;
     }
 
-    // ── 1. DOWNTIME: 2 of last 3 probe_success = 0 ───────────────────────────
+    
     const last3Success = successPoints.slice(-3).map(p => p[1]);
     const downCount = last3Success.filter(v => v === 0).length;
     const isDown = downCount >= 2;
 
-    // ── 2. HTTP STATUS >= 500 ─────────────────────────────────────────────────
+    
     const latestStatus = statusCodePoints.at(-1)?.[1] ?? null;
     const isServerError = latestStatus !== null && latestStatus >= 500;
 
-    // ── 3. LATENCY SPIKE: 3-sigma Z-score on last 2 consecutive points ────────
+    
     let isLatencySpiked = false;
     let durationStats: MetricStats = { mean: 0, stddev: 0, zScore: 0, latestValue: 0 };
 
@@ -54,7 +54,7 @@ export async function checkServiceForAnomalies(serviceId: string) {
       isLatencySpiked = bothSpike && mean >= 0.05;
     }
 
-    // ── 4. EARLY EXIT ──────────────────────────────────────────────────────────
+    
     if (!isDown && !isLatencySpiked && !isServerError) {
       console.log(`[Anomaly] ${serviceId} is normal.`);
       return;
@@ -66,7 +66,7 @@ export async function checkServiceForAnomalies(serviceId: string) {
       `http_status=${latestStatus}`
     );
 
-    // ── 5. COOLDOWN ───────────────────────────────────────────────────────────
+    
     const recentIncident = await prisma.incident.findFirst({
       where: { serviceId, createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } },
     });
@@ -75,7 +75,7 @@ export async function checkServiceForAnomalies(serviceId: string) {
       return;
     }
 
-    // ── 6. AI CONFIRMATION ────────────────────────────────────────────────────
+    
     let aiResult;
     try {
       aiResult = await analyzeMetrics(
@@ -114,7 +114,7 @@ export async function checkServiceForAnomalies(serviceId: string) {
       `for ${serviceId}: ${aiResult.reason}`
     );
 
-    // ── 7. CREATE INCIDENT ────────────────────────────────────────────────────
+    
     const incident = await prisma.incident.create({
       data: {
         title: `Anomaly: ${isDown ? 'Downtime' : isServerError ? `HTTP ${latestStatus}` : 'Latency Spike'}`,
@@ -142,7 +142,7 @@ export async function checkServiceForAnomalies(serviceId: string) {
       body: JSON.stringify({ incidentId: incident.id }),
     }).catch((err) => console.error('[Patcher] Trigger failed:', err));
 
-    // ── 8. LOG RAW METRICS ────────────────────────────────────────────────────
+    
     await prisma.anomalyLog.create({
       data: {
         metric: isDown ? 'probe_success' : isServerError ? 'probe_http_status_code' : 'probe_duration_seconds',

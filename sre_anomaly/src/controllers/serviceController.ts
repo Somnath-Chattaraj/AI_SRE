@@ -5,7 +5,7 @@ import { updatePrometheusTargets } from "../utils/prometheus";
 export class ServiceController {
   static async addService(req: Request, res: Response) {
     try {
-      // Accept `endpoint` as an alias for `url_server` for frontend convenience
+      
       const {
         name,
         url_server,
@@ -28,7 +28,7 @@ export class ServiceController {
       const user = res.locals.user as { id: string };
       const service = await ServiceService.createService(user.id, name, serverUrl, url_codebase);
       
-      // Update Prometheus tracking
+      
       await updatePrometheusTargets();
 
       res.status(201).json({ message: "Service added", service });
@@ -58,7 +58,7 @@ export class ServiceController {
          return;
       }
 
-      // Update Prometheus tracking
+      
       await updatePrometheusTargets();
 
       res.status(200).json({ message: "Service deleted successfully" });

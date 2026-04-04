@@ -18,7 +18,7 @@ async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+
 
 export interface BackendService {
   id: string;
@@ -88,7 +88,7 @@ export interface AIAction {
   timestamp: string;
 }
 
-// ─── Services ─────────────────────────────────────────────────────────────────
+
 
 export async function fetchRealServices(): Promise<BackendService[]> {
   const res = await apiCall<{ services: BackendService[] }>("/services");
@@ -111,13 +111,13 @@ export async function deleteRealService(id: string): Promise<void> {
   await apiCall<{ message: string }>(`/services/${id}`, { method: "DELETE" });
 }
 
-// ─── Metrics ──────────────────────────────────────────────────────────────────
+
 
 export async function fetchRealMetrics(serviceId: string): Promise<ServiceMetrics> {
   return apiCall<ServiceMetrics>(`/services/${serviceId}/metrics`);
 }
 
-// ─── Incidents ────────────────────────────────────────────────────────────────
+
 
 export async function fetchRealIncidents(serviceId?: string): Promise<BackendIncident[]> {
   const qs = serviceId ? `?service_id=${encodeURIComponent(serviceId)}` : "";
@@ -125,14 +125,14 @@ export async function fetchRealIncidents(serviceId?: string): Promise<BackendInc
   return res.incidents;
 }
 
-// ─── AI Actions ───────────────────────────────────────────────────────────────
+
 
 export async function fetchRealAIActions(): Promise<AIAction[]> {
   const res = await apiCall<{ actions: AIAction[] }>("/ai-actions");
   return res.actions;
 }
 
-// ─── Anomaly Logs ─────────────────────────────────────────────────────────────
+
 
 export async function fetchAnomalyLogs(serviceId: string): Promise<AnomalyLog[]> {
   const res = await apiCall<{ logs: AnomalyLog[] }>(`/services/${serviceId}/anomaly-logs`);

@@ -22,13 +22,13 @@ export async function scheduleAnomalyChecks() {
           userId: service.userId,
         },
         opts: {
-          jobId: `anomaly-${service.id}-${Math.floor(Date.now() / 15000)}`, // Dedup grouping by 15s window
+          jobId: `anomaly-${service.id}-${Math.floor(Date.now() / 15000)}`, 
           removeOnComplete: 100,
           removeOnFail: 500,
           attempts: 3,
           backoff: {
             type: 'exponential',
-            delay: 2000, // 2s -> 4s -> 8s
+            delay: 2000, 
           },
         },
       }));
@@ -38,7 +38,7 @@ export async function scheduleAnomalyChecks() {
     } catch (error) {
       console.error('[Producer] Error adding jobs to queue:', error);
     }
-  }, 15000); // Poll every 15 seconds
+  }, 15000); 
 }
 
 if (require.main === module) {

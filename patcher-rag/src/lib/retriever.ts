@@ -23,16 +23,13 @@ export class Retriever {
     this.store = store;
   }
 
-  /**
-   * Multi-query retrieval: runs several focused queries in parallel and
-   * deduplicates results by chunk ID. More angles → better recall.
-   */
+  
   async retrieve(
     incident: IncidentReport,
     nPerQuery: number = 5,
   ): Promise<RetrievalResult> {
-    // Build distinct queries from different aspects of the incident
-    // Type-specific seed queries — surface code patterns that match the symptom
+    
+    
     const typeQueries: Record<string, string[]> = {
       latency:    ["setTimeout delay sleep blocking wait"],
       http_error: ["fetch url status 500 error throw catch res.status"],
@@ -48,13 +45,13 @@ export class Retriever {
       ...(typeQueries[incident.type] ?? [`${incident.type} error`]),
     ].filter((q): q is string => Boolean(q?.trim()));
 
-    // Run all queries in parallel
+    
     const queryResults = await Promise.all(
       queries.map((q) => this.store.query(q, nPerQuery)),
     );
 
-    // Deduplicate by chunk ID, preserving first-occurrence order
-    // (earlier queries are higher signal — description first)
+    
+    
     const seen = new Set<string>();
     const deduped: CodeChunk[] = [];
     for (const chunks of queryResults) {

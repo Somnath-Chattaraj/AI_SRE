@@ -6,9 +6,7 @@ const TARGETS_FILE =
   process.env.PROMETHEUS_TARGETS_FILE || "/etc/prometheus/targets/targets.json";
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || "http://prometheus:9090";
 
-/**
- * Generates the targets.json file required for the Prometheus File SD config.
- */
+
 export async function generateTargetsFile() {
   try {
     const services = await prisma.service.findMany();

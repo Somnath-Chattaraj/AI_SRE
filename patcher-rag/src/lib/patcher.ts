@@ -21,7 +21,7 @@ export interface PatchResult {
 
 export const MODEL = "qwen-3-235b-a22b-instruct-2507";
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+
 
 const patchSchema = z.object({
   analysis: z
@@ -65,7 +65,7 @@ const patchSchema = z.object({
 
 type PatchOutput = z.infer<typeof patchSchema>;
 
-// ─── Prompt ───────────────────────────────────────────────────────────────────
+
 
 function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
   const context = chunks
@@ -76,7 +76,7 @@ function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
     ? `- HTTP Status:  ${incident.http_status_code} (returned by blackbox probe)`
     : "";
 
-  // Symptom-to-code mapping — tells the LLM WHAT to look for, not which file
+  
   const symptomGuide: Record<string, string> = {
     latency: `The service is responding SLOWLY. Scan every function for:
   • setTimeout / setInterval with large delays → remove or drastically reduce the delay
@@ -136,10 +136,10 @@ ${context}
 - \`no_fix\` is only for external failures (cloud outage, DNS) — if the app code is the problem, always produce a patch`;
 }
 
-// ─── Validation ───────────────────────────────────────────────────────────────
 
-// Normalize trailing whitespace per line — catches trailing-space-only diffs
-// without collapsing real structural changes (added lines, indentation shifts)
+
+
+
 function normalize(s: string): string {
   return s
     .split("\n")
@@ -159,7 +159,7 @@ function validatePatches(raw: PatchOutput): FilePatch[] {
   });
 }
 
-// ─── Patcher ─────────────────────────────────────────────────────────────────
+
 
 export class Patcher {
   private cerebras: ReturnType<typeof createCerebras>;

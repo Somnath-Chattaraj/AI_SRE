@@ -16,17 +16,17 @@ export const startWorker = () => {
         console.log(`[Worker] Finished job ${job.id} for service ${serviceId}`);
       } catch (err) {
         console.error(`[Worker] Job ${job.id} failed.`, err);
-        throw err; // BullMQ will handle retries based on max attempts
+        throw err; 
       }
     },
     {
       connection,
-      concurrency: 10, // Process 10 jobs concurrently
+      concurrency: 10, 
     }
   );
 
   worker.on('completed', (job) => {
-    // console.log(`[Worker] Job ${job.id} has completed!`);
+    
   });
 
   worker.on('failed', (job, err) => {

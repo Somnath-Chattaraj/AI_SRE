@@ -6,7 +6,7 @@ export class AIActionController {
     try {
       const user = res.locals.user;
 
-      // Fetch recent incidents — each state transition is an AI action
+      
       const incidents = await prisma.incident.findMany({
         where: { service: { userId: user.id } },
         include: { service: { select: { name: true } } },
@@ -19,7 +19,7 @@ export class AIActionController {
       for (const inc of incidents) {
         const svcName = inc.service?.name ?? "unknown";
 
-        // Every incident = anomaly detected
+        
         actions.push({
           id: `${inc.id}-detected`,
           type: "anomaly_detected",
@@ -28,7 +28,7 @@ export class AIActionController {
           timestamp: inc.createdAt,
         });
 
-        // Patched incidents = fix generated
+        
         if (inc.patchStatus === "PROCESSING" || inc.patchStatus === "RESOLVED" || inc.patchStatus === "FAILED") {
           actions.push({
             id: `${inc.id}-fix`,
@@ -39,7 +39,7 @@ export class AIActionController {
           });
         }
 
-        // PR created
+        
         if (inc.prUrl) {
           actions.push({
             id: `${inc.id}-pr`,
@@ -50,7 +50,7 @@ export class AIActionController {
           });
         }
 
-        // Auto resolved
+        
         if (inc.patchStatus === "RESOLVED") {
           actions.push({
             id: `${inc.id}-resolved`,
@@ -62,7 +62,7 @@ export class AIActionController {
         }
       }
 
-      // Sort newest first
+      
       actions.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
       res.status(200).json({ actions: actions.slice(0, 30) });

@@ -1,6 +1,6 @@
-// ============================================================
-// OpSmith – Mock Data Layer
-// ============================================================
+
+
+
 
 export type ServiceStatus = "healthy" | "warning" | "critical" | "unknown";
 export type IncidentSeverity = "low" | "medium" | "high" | "critical";
@@ -15,8 +15,8 @@ export interface Service {
   avgLatency: number;
   errorRate: number;
   lastChecked: string;
-  monitoringInterval: number; // seconds
-  alertThreshold: number; // ms
+  monitoringInterval: number; 
+  alertThreshold: number; 
   activeIncidents: number;
   description?: string;
 }
@@ -93,7 +93,7 @@ export interface LogEntry {
   serviceId: string;
 }
 
-// ─── Helper Generators ───────────────────────────────────────
+
 function generateTimeSeries(
   hours: number,
   baseValue: number,
@@ -117,7 +117,7 @@ function generateTimeSeries(
   return points;
 }
 
-// ─── Services ────────────────────────────────────────────────
+
 export const services: Service[] = [
   {
     id: "svc-1",
@@ -205,7 +205,7 @@ export const services: Service[] = [
   },
 ];
 
-// ─── Metrics Time-Series ─────────────────────────────────────
+
 export const latencyTimeSeries: TimeSeriesData[] = [
   { label: "Auth-Gateway", data: generateTimeSeries(24, 42, 15), color: "#8b5cf6" },
   { label: "Payment-API", data: generateTimeSeries(24, 340, 120, [200, 400, 600]), color: "#ef4444" },
@@ -224,7 +224,7 @@ export const successRateTimeSeries: TimeSeriesData[] = [
   { label: "Postgres-Main", data: generateTimeSeries(24, 99.2, 0.5), color: "#f59e0b" },
 ];
 
-// ─── Recent AI Actions ───────────────────────────────────────
+
 export const aiActions: AIAction[] = [
   {
     id: "act-1",
@@ -279,7 +279,7 @@ export const aiActions: AIAction[] = [
   },
 ];
 
-// ─── Incidents ───────────────────────────────────────────────
+
 export const incidents: Incident[] = [
   {
     id: "inc-1",
@@ -340,7 +340,7 @@ export const incidents: Incident[] = [
   },
 ];
 
-// ─── Pull Requests ───────────────────────────────────────────
+
 export const pullRequests: PullRequest[] = [
   {
     id: "pr-42",
@@ -488,7 +488,7 @@ export const pullRequests: PullRequest[] = [
   },
 ];
 
-// ─── Notifications ───────────────────────────────────────────
+
 export const notifications: Notification[] = [
   {
     id: "notif-1",
@@ -537,7 +537,7 @@ export const notifications: Notification[] = [
   },
 ];
 
-// ─── Log Entries (for Service Detail) ────────────────────────
+
 export function generateLogs(serviceId: string): LogEntry[] {
   const levels: LogEntry["level"][] = ["info", "warn", "error", "debug"];
   const messages: Record<string, string[]> = {
@@ -594,7 +594,7 @@ export function generateLogs(serviceId: string): LogEntry[] {
       ? "error"
       : msg.startsWith("WARNING")
         ? "warn"
-        : levels[Math.floor(Math.random() * 3)]; // bias toward info
+        : levels[Math.floor(Math.random() * 3)]; 
     logs.push({
       id: `log-${serviceId}-${i}`,
       timestamp: new Date(Date.now() - i * 120000 + Math.random() * 60000).toISOString(),
