@@ -45,6 +45,7 @@ model Incident {
   type        String   @default("unknown")
   severity    String   @default("MEDIUM")
   details     Json?
+  prUrl       String?
   serviceId   String   @db.ObjectId
   patchStatus String   @default("PENDING") // PENDING | PROCESSING | RESOLVED | FAILED
   service     Service  @relation(fields: [serviceId], references: [id])

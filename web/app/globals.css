@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─── AutoHeal Design Tokens ──────────────────────────────── */
+:root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 29 80% 50%; /* Vibrant Copper */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 29 20% 95%; /* Very light copper tint for hover */
+    --accent-foreground: 29 80% 40%;
+    --destructive: 0 84.2% 60.2%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 29 80% 50%;
+    --radius: 0.5rem;
+}
+
+.dark {
+    --background: 0 0% 0%; /* Pure Black */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%; /* Near black */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 29 70% 50%; /* Copper for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 29 30% 15%; /* Deep dark copper tint */
+    --accent-foreground: 29 80% 70%;
+    --destructive: 0 62.8% 40.6%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 29 70% 50%;
+    
+    /* Minimal specific colors */
+    --ah-healthy: 142 70% 45%;
+    --ah-warning: 38 90% 50%;
+    --ah-critical: 0 70% 55%;
+    --ah-ai: 29 70% 50%; /* AI features in copper */
+    --ah-ai-secondary: 29 50% 40%;
+}
+
+@theme inline {
+    --font-sans: var(--font-sans);
+    --font-heading: var(--font-heading);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+  }
+}
+
+/* ─── Custom Utilities ────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+  .glass-strong {
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .glow-purple {
+    box-shadow: none;
+  }
+  .glow-green {
+    box-shadow: none;
+  }
+  .glow-red {
+    box-shadow: none;
+  }
+  .text-gradient {
+    color: var(--foreground);
+  }
+  .bg-grid {
+    background: transparent;
+  }
+  .bg-dots {
+    background: transparent;
+  }
+  .animate-pulse-slow {
+    animation: none;
+  }
+  .animate-glow {
+    animation: none;
+  }
+}
+
+@keyframes glow-pulse {
+  from { box-shadow: none; }
+  to { box-shadow: none; }
+}
+
+/* ─── Scrollbar Styling ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(220 14% 22%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 14% 30%);
+}
+
+/* ─── Code/Diff Styling ───────────────────────────────────── */
+.diff-add {
+  background: hsl(142 71% 45% / 12%);
+  color: hsl(142 71% 65%);
+}
+.diff-remove {
+  background: hsl(0 72% 51% / 12%);
+  color: hsl(0 72% 70%);
+}
+.diff-line {
+  font-family: var(--font-heading), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre;
+  padding: 0 1rem;
+}
+
+/* ─── Skeleton shimmer ────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(220 14% 14%) 25%,
+    hsl(220 14% 18%) 50%,
+    hsl(220 14% 14%) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
