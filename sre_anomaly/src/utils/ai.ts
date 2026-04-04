@@ -1,56 +1,94 @@
-import { generateObject } from 'ai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { z } from 'zod';
+import { generateText, Output } from "ai";
+import { createCerebras } from "@ai-sdk/cerebras";
+import { z } from "zod";
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+const cerebras = createCerebras({
+  apiKey: process.env.CEREBRAS_API_KEY,
 });
 
 const anomalySchema = z.object({
-  isAnomaly: z.boolean().describe("Whether an anomaly is detected based on the metrics"),
-  reason: z.string().describe("Detailed explanation of why this is considered an anomaly or not"),
-  severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).describe("Severity class of the anomaly if present"),
-  suggested_action: z.string().describe("Actionable advice to resolve the anomaly"),
+  isAnomaly: z
+    .boolean()
+    .describe(
+      "True only if you are highly confident this is a real incident, not noise or a transient blip",
+    ),
+  confidence: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe(
+      "Your confidence that this is a genuine anomaly (0 = definitely normal, 100 = definitely anomalous)",
+    ),
+  reason: z
+    .string()
+    .describe("Concise technical explanation referencing specific metric values"),
+  severity: z
+    .enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+    .describe("Severity only when isAnomaly is true"),
+  suggested_action: z
+    .string()
+    .describe("Specific, actionable fix for the SRE on-call"),
 });
 
 export type AIAnomalyResult = z.infer<typeof anomalySchema>;
+
+export interface MetricStats {
+  mean: number;
+  stddev: number;
+  zScore: number;
+  latestValue: number;
+}
 
 export async function analyzeMetrics(
   serviceId: string,
   downtimeDetected: boolean,
   latencySpikeDetected: boolean,
-  dataPointsConfig: { durationSeconds: [number, number][], success: [number, number][] }
+  dataPointsConfig: {
+    durationSeconds: [number, number][];
+    success: [number, number][];
+  },
+  stats: { duration: MetricStats },
 ): Promise<AIAnomalyResult> {
-  const model = openrouter.chat('qwen/qwen3.6-plus:free');
+  // AI SDK v6: generateText + Output.object is the non-deprecated path for
+  // structured output. It uses the model's native JSON mode under the hood.
+  const model = cerebras("qwen-3-235b-a22b-instruct-2507");
 
-  const prompt = `
-You are an expert Site Reliability Engineer analyzing Prometheus metrics for a service.
-Service ID: ${serviceId}
-Rule-based preliminary checks detected:
-- Downtime (probe_success == 0): ${downtimeDetected}
-- Latency Spike (> average * 2.5): ${latencySpikeDetected}
+  const recentDuration = dataPointsConfig.durationSeconds.slice(-5);
+  const recentSuccess = dataPointsConfig.success.slice(-5);
 
-Last 10 data points for probe_success (timestamp, value):
-${JSON.stringify(dataPointsConfig.success)}
+  const prompt = `You are a conservative SRE anomaly validator. False positives are expensive — only confirm an anomaly when the evidence is unambiguous.
 
-Last 10 data points for probe_duration_seconds (timestamp, value):
-${JSON.stringify(dataPointsConfig.durationSeconds)}
+Service: ${serviceId}
 
-Analyze these metrics. Provide a JSON response indicating if there's an anomaly, a clear reason, severity, and suggested action.
-`;
+## Statistical Summary (probe_duration_seconds, last 10 min baseline)
+- Baseline mean:   ${stats.duration.mean.toFixed(4)}s
+- Baseline stddev: ${stats.duration.stddev.toFixed(4)}s
+- Latest value:    ${stats.duration.latestValue.toFixed(4)}s
+- Z-score:         ${stats.duration.zScore.toFixed(2)}σ  (alert threshold: 3.0σ)
 
-  try {
-    const { object } = await generateObject({
-      model,
-      schema: anomalySchema,
-      prompt,
-      // Give AI maximum 15 seconds to reply
-      abortSignal: AbortSignal.timeout(15000),
-    });
+## Rule-based flags (pre-computed)
+- Service down (probe_success = 0 in 2+ of last 3 checks): ${downtimeDetected}
+- Latency spike (z > 3.0σ AND > 2s for 2 consecutive points): ${latencySpikeDetected}
 
-    return object;
-  } catch (error) {
-    console.error("[AI] Error generating analysis:", error);
-    throw error;
-  }
+## Last 5 probe_success values [timestamp, value]:
+${JSON.stringify(recentSuccess)}
+
+## Last 5 probe_duration_seconds values [timestamp, value]:
+${JSON.stringify(recentDuration)}
+
+## Instructions
+- A z-score below 2.5 is almost certainly noise — set isAnomaly=false
+- A single bad data point is NOT an anomaly — look for sustained patterns
+- If probe data is sparse or the service just started, set isAnomaly=false
+- Set confidence below 70 if you have any doubt
+- Only set severity=CRITICAL for sustained downtime or z > 5σ`;
+
+  const { experimental_output: result } = await generateText({
+    model,
+    experimental_output: Output.object({ schema: anomalySchema }),
+    prompt,
+    abortSignal: AbortSignal.timeout(30_000),
+  });
+
+  return result;
 }

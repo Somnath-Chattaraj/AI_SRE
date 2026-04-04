@@ -84,7 +84,7 @@ export async function fetchPrometheusMetrics(
   metricName: 'probe_duration_seconds' | 'probe_success'
 ): Promise<[number, number][]> {
   const end = Math.floor(Date.now() / 1000);
-  const start = end - 150;
+  const start = end - 600; // 10-minute window → ~40 points at 15s step
   const step = 15;
 
   const query = `${metricName}{service_id="${serviceId}"}`;
@@ -118,7 +118,7 @@ export async function fetchPrometheusMetrics(
     }
 
     const rawValues = data.data?.result?.[0]?.values || [];
-    return rawValues.map(([ts, val]) => [ts, parseFloat(val)] as [number, number]).slice(-10);
+    return rawValues.map(([ts, val]) => [ts, parseFloat(val)] as [number, number]);
   } catch (error) {
     console.error(`[Prometheus] Error fetching ${metricName} for service ${serviceId}:`, error);
     return [];

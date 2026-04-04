@@ -1,38 +1,11 @@
 [
   {
     "targets": [
-      "http://localhost:3005/health"
-    ],
-    "labels": {
-      "user_id": "882dbd52-4d15-49f7-85f7-07a99886ebba",
-      "service_id": "630ff91c-d875-4612-89ea-bf326bc65d72"
-    }
-  },
-  {
-    "targets": [
       "http://my-app:3006/health"
     ],
     "labels": {
-      "user_id": "882dbd52-4d15-49f7-85f7-07a99886ebba",
-      "service_id": "b7ead3f3-0cb0-4011-8a63-83f2b74be948"
-    }
-  },
-  {
-    "targets": [
-      "https://chatgpt.com/health"
-    ],
-    "labels": {
-      "user_id": "882dbd52-4d15-49f7-85f7-07a99886ebba",
-      "service_id": "e31ad70b-d353-4f6f-9db9-f3ea2edeb492"
-    }
-  },
-  {
-    "targets": [
-      "http://my-app:3006/health"
-    ],
-    "labels": {
-      "user_id": "882dbd52-4d15-49f7-85f7-07a99886ebba",
-      "service_id": "0107dd83-5584-4cd3-b0e5-049bcd9ff535"
+      "user_id": "69d11339633981b7dc6a8bd2",
+      "service_id": "69d11345633981b7dc6a8bd3"
     }
   }
 ]
