@@ -1,229 +1,301 @@
-import "dotenv/config";
-import { readdir, readFile } from "fs/promises";
 import path from "path";
+import prisma from "../lib/db.js";
 import { VectorStore } from "./lib/storage.js";
-import { Retriever, type IncidentReport } from "./lib/retriever.js";
+import { Retriever } from "./lib/retriever.js";
 import { MODEL, Patcher } from "./lib/patcher.js";
+import { indexDirectory } from "./lib/indexer.js";
 import {
-  writeFileContent,
+  cloneRepo,
+  cleanupRepo,
+  replaceInFile,
   readFileContent,
   gitCommit,
   gitEnsureBranch,
-  pm2Restart,
-  healthCheck,
-  gitRevert,
+  gitCurrentBranch,
   gitLog,
-  resolveAppPath,
+  gitRevert,
+  healthCheck,
+  createGitHubPR,
+  log,
 } from "./lib/tools.js";
-import { log } from "./lib/tools.js";
 
-const REPORTS_DIR = "../Anomaly_Detection/reports";
-const PATCH_REPORT_DIR = "patcher-rag/patch_reports";
-const POLL_INTERVAL_MS = 10000;
-const PROCESSED_FILE = "patcher-rag/.processed_incidents";
-const HEALTH_CHECK_URL = "http://localhost:6969/health";
-const PM2_SERVICE_NAME = "buggy-app";
+const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL ?? "http://localhost:6969/health";
+const PORT = Number(process.env.PATCHER_PORT ?? 4000);
+const CLONE_BASE = process.env.CLONE_BASE ?? "/tmp/patcher";
 
-interface PatchReport {
-  incident_id: string;
-  timestamp: string;
-  started_at: string;
-  completed_at?: string;
-  duration_ms?: number;
-  metric_analyzed: string;
-  failing_service: string;
-  suggested_action?: string;
-  status: "processing" | "completed" | "failed" | "reverted";
-  chunks_retrieved: number;
-  model_used: string;
-  patches_applied: Array<{ file: string; success: boolean; commit_hash?: string; error?: string }>;
-  health_check_passed: boolean;
-  health_check_url?: string;
-  health_check_duration_ms?: number;
-  reverted: boolean;
-  revert_reason?: string;
-  error?: string;
-}
+// ─── Shared singletons (initialized lazily) ───────────────────────────────────
 
-const finishReport = async (
-  report: PatchReport,
-  status: PatchReport["status"],
-  processed: Set<string>,
-  error?: string,
-) => {
-  report.status = status;
-  report.error = error;
-  report.completed_at = new Date().toISOString();
-  report.duration_ms = Date.now() - new Date(report.started_at).getTime();
-  await savePatchReport(report);
-  processed.add(report.incident_id);
-};
+let patcher: Patcher | null = null;
+let ready = false;
 
-async function loadProcessedIds(): Promise<Set<string>> {
-  try {
-    const content = await readFileContent(PROCESSED_FILE);
-    return content ? new Set(JSON.parse(content)) : new Set();
-  } catch {
-    return new Set();
+// ─── Per-incident workflow ────────────────────────────────────────────────────
+//
+//  1. Look up incident + service in DB
+//  2. git clone service.url_codebase → /tmp/patcher/{incidentId}/
+//  3. Index cloned source files into a per-service ChromaDB collection
+//  4. RAG: retrieve the most relevant code chunks for this incident
+//  5. LLM: generate precise search/replace patches
+//  6. Apply patches (exact string replacement — no full-file rewrites)
+//  7. git commit on a new branch, push, open a GitHub PR
+//  8. Health-check the running service (optional)
+//  9. Cleanup temp clone
+//
+async function processIncident(incidentId: string): Promise<void> {
+  if (!patcher) { log("not_ready", incidentId); return; }
+
+  // ── Fetch incident ──────────────────────────────────────────────────────────
+  const incident = await prisma.incident.findUnique({ where: { id: incidentId } });
+  if (!incident) { log("incident_not_found", incidentId); return; }
+  if (incident.patchStatus !== "PENDING") {
+    log(`skipping status=${incident.patchStatus}`, incidentId);
+    return;
   }
-}
 
-async function saveProcessedIds(ids: Set<string>): Promise<void> {
-  await writeFileContent(PROCESSED_FILE, JSON.stringify([...ids]));
-}
+  // Fetch service separately — avoids crash on broken MongoDB reference
+  const service = await prisma.service.findUnique({ where: { id: incident.serviceId } });
+  const serviceName = service?.name ?? "unknown";
+  const repoUrl = service?.url_codebase;
 
-async function savePatchReport(report: PatchReport): Promise<void> {
-  const fileName = `patch_report_${report.incident_id}.json`;
-  await writeFileContent(path.join(PATCH_REPORT_DIR, fileName), JSON.stringify(report, null, 2));
-}
-
-async function readReports(): Promise<IncidentReport[]> {
-  const files = await readdir(REPORTS_DIR);
-  const reports: IncidentReport[] = [];
-  for (const file of files) {
-    if (!file.endsWith(".json")) continue;
-    try {
-      const content = await readFile(path.join(REPORTS_DIR, file), "utf-8");
-      reports.push(JSON.parse(content) as IncidentReport);
-    } catch { continue; }
+  if (!repoUrl || repoUrl === "http://github.com") {
+    log("no_repo_url — cannot patch without url_codebase", incidentId);
+    await prisma.incident.update({
+      where: { id: incidentId },
+      data: { patchStatus: "FAILED" },
+    });
+    return;
   }
-  return reports;
-}
 
-async function revertPatches(patches: Array<{ filePath?: string }>, report: PatchReport, processed: Set<string>) {
-  const first = patches[0];
-  if (!first) return;
-  const log = await gitLog(resolveAppPath(first.filePath), 2);
-  const prevCommit = log.split("\n")[1]?.split(" ")[0];
-  if (prevCommit) {
-    for (const p of patches) await gitRevert(prevCommit, resolveAppPath(p.filePath));
-    await pm2Restart(PM2_SERVICE_NAME);
-  }
-  await finishReport(report, "reverted", processed);
-}
+  await prisma.incident.update({ where: { id: incidentId }, data: { patchStatus: "PROCESSING" } });
 
-async function processIncident(incident: IncidentReport, retriever: Retriever, patcher: Patcher, processed: Set<string>) {
-  log("start", incident.incident_id);
-
-  const report: PatchReport = {
-    incident_id: incident.incident_id,
-    timestamp: new Date().toISOString(),
-    started_at: new Date().toISOString(),
-    metric_analyzed: incident.metric_analyzed,
-    failing_service: incident.failing_service ?? "unknown",
-    suggested_action: incident.suggested_action,
-    status: "processing",
-    chunks_retrieved: 0,
-    model_used: MODEL,
-    patches_applied: [],
-    health_check_passed: false,
-    health_check_url: HEALTH_CHECK_URL,
-    reverted: false,
+  const details = incident.details as Record<string, unknown> | null;
+  const incidentReport = {
+    incident_id: incident.id,
+    type: incident.type,
+    severity: incident.severity,
+    description: incident.description ?? undefined,
+    suggested_action: (details?.suggested_action as string) ?? undefined,
+    serviceName,
   };
 
+  const cloneDir = path.join(CLONE_BASE, incidentId);
+
   try {
-    const result = await retriever.retrieve(incident);
+    // ── 1. Clone ──────────────────────────────────────────────────────────────
+    log(`Cloning ${repoUrl}`, incidentId);
+    await cloneRepo(repoUrl, cloneDir);
 
-    report.chunks_retrieved = result.chunks.length;
-    log(`chunks=${result.chunks.length}`, incident.incident_id);
+    // ── 2. Index into a per-service ChromaDB collection ───────────────────────
+    //    Collection is named by serviceId so re-runs for the same service reuse
+    //    the same vector space (upsert is idempotent).
+    const collectionName = `service-${incident.serviceId}`;
+    const store = new VectorStore();
+    await store.init(collectionName);
+    log(`Indexing ${cloneDir} → collection "${collectionName}"`, incidentId);
+    const chunkCount = await indexDirectory(cloneDir, store);
+    log(`Indexed ${chunkCount} chunks`, incidentId);
 
-    if (result.chunks.length === 0) {
-      await finishReport(report, "completed", processed);
+    if (chunkCount === 0) {
+      await finish(incidentId, "failed", "No source files found in repo");
       return;
     }
 
-    const patchResult = await patcher.generatePatch(incident, result.chunks);
+    // ── 3. Retrieve relevant code chunks ──────────────────────────────────────
+    const retriever = new Retriever(store);
+    const { chunks } = await retriever.retrieve(incidentReport);
+    log(`Retrieved ${chunks.length} chunks`, incidentId);
+
+    if (chunks.length === 0) {
+      await finish(incidentId, "failed", "No relevant chunks found");
+      return;
+    }
+
+    // ── 4. Generate patches ───────────────────────────────────────────────────
+    const patchResult = await patcher.generatePatch(incidentReport, chunks);
     if (!patchResult.success) {
-      log(`patch_err=${patchResult.error}`, incident.incident_id);
-      await finishReport(report, "failed", processed, patchResult.error);
+      await finish(incidentId, "failed", patchResult.error);
+      return;
+    }
+    if (!patchResult.patches.length) {
+      log("LLM: no patch needed", incidentId);
+      await finish(incidentId, "completed");
       return;
     }
 
-    if (!patchResult.patches?.length) {
-      log("no_patch", incident.incident_id);
-      await finishReport(report, "completed", processed);
+    // ── 5. Create patch branch ────────────────────────────────────────────────
+    const baseBranch = await gitCurrentBranch(cloneDir);
+    const patchBranch = `patch/${incidentId}`;
+    if (!await gitEnsureBranch(patchBranch, cloneDir)) {
+      await finish(incidentId, "failed", "Failed to create git branch");
       return;
     }
 
-    const branchName = `patch/${incident.incident_id}`;
-    
-    if (!await gitEnsureBranch(branchName)) {
-      await finishReport(report, "failed", processed, "Failed to create branch");
-      return;
-    }
-
+    // ── 6. Apply search/replace patches ──────────────────────────────────────
+    const appliedFiles: string[] = [];
     for (const patch of patchResult.patches) {
-      const targetPath = resolveAppPath(patch.filePath);
-      const writeSuccess = await writeFileContent(targetPath, patch.code);
+      // LLM returns relative paths (e.g. "src/utils.js") — resolve inside clone
+      const targetPath = path.isAbsolute(patch.filePath)
+        ? patch.filePath
+        : path.join(cloneDir, patch.filePath);
 
-      const entry: { file: string; success: boolean; commit_hash?: string; error?: string } = {
-        file: targetPath, success: writeSuccess,
-      };
-
-      if (!writeSuccess) {
-        entry.error = "Failed to write file";
-        report.patches_applied.push(entry);
-        report.revert_reason = "File write failed";
-        await revertPatches(patchResult.patches, report, processed);
+      const existing = await readFileContent(targetPath);
+      if (existing === null) {
+        log(`File not found: ${targetPath}`, incidentId);
+        await revertAll(appliedFiles, cloneDir, incidentId);
+        await finish(incidentId, "failed", `File not found: ${patch.filePath}`);
         return;
       }
 
-      const commitResult = await gitCommit(targetPath, `Fix: ${incident.incident_id} @ ${Date.now()}`);
-
-      if (commitResult.success) {
-        entry.commit_hash = commitResult.message.match(/[a-f0-9]{7}/)?.[0];
-      } else {
-        entry.error = commitResult.message;
-        log(`git_err=${commitResult.message}`, incident.incident_id);
+      log(`Patching ${patch.filePath}`, incidentId);
+      const result = await replaceInFile(targetPath, patch.search, patch.replace);
+      if (!result.success) {
+        log(`replaceInFile failed: ${result.error}`, incidentId);
+        await revertAll(appliedFiles, cloneDir, incidentId);
+        await finish(incidentId, "failed", result.error);
+        return;
       }
-      report.patches_applied.push(entry);
+      appliedFiles.push(targetPath);
     }
 
-    await pm2Restart(PM2_SERVICE_NAME);
-    await new Promise(r => setTimeout(r, 5000));
+    // ── 7. Commit ─────────────────────────────────────────────────────────────
+    const commitResult = await gitCommit(
+      appliedFiles,
+      `fix(patcher): resolve ${incident.type} incident ${incidentId}`,
+      cloneDir,
+    );
+    if (!commitResult.success) log(`git commit warning: ${commitResult.message}`, incidentId);
 
-    const healthStart = Date.now();
+    // ── 8. Health check (best-effort, doesn't block the PR) ──────────────────
     const healthy = await healthCheck(HEALTH_CHECK_URL);
-    report.health_check_duration_ms = Date.now() - healthStart;
+    log(`health_check=${healthy}`, incidentId);
 
-    if (!healthy) {
-      report.revert_reason = "Health check failed";
-      await revertPatches(patchResult.patches, report, processed);
-    } else {
-      log("done", incident.incident_id);
-      report.health_check_passed = true;
-      await finishReport(report, "completed", processed);
-    }
-  } catch (e) {
-    await finishReport(report, "failed", processed, String(e));
+    // ── 9. Push + open PR ─────────────────────────────────────────────────────
+    const pr = await createGitHubPR({
+      branch: patchBranch,
+      baseBranch,
+      title: `[Auto-Patch] ${incident.title}`,
+      body: [
+        `**Incident:** \`${incidentId}\``,
+        `**Type:** ${incident.type} | **Severity:** ${incident.severity}`,
+        `**Service:** ${serviceName}`,
+        `**Description:** ${incident.description ?? "N/A"}`,
+        `**Suggested Action:** ${(details?.suggested_action as string) ?? "N/A"}`,
+        "",
+        "**Files patched:**",
+        appliedFiles.map((f) => `- \`${path.relative(cloneDir, f)}\``).join("\n"),
+        "",
+        `**Model:** ${MODEL}`,
+        `**Health check:** ${healthy ? "passed ✓" : "skipped / failed ✗"}`,
+        "",
+        "> Auto-generated by AI SRE patcher",
+      ].join("\n"),
+      repoDir: cloneDir,
+    });
+
+    if (pr.success) log(`PR: ${pr.url}`, incidentId);
+    else log(`PR failed (non-fatal): ${pr.error}`, incidentId);
+
+    await finish(incidentId, "completed");
+  } catch (err) {
+    log(`unexpected_error=${err}`, incidentId);
+    await finish(incidentId, "failed", String(err));
+  } finally {
+    // Always clean up the clone
+    await cleanupRepo(cloneDir);
+    log("clone_cleaned_up", incidentId);
   }
 }
 
+async function revertAll(files: string[], repoDir: string, incidentId: string): Promise<void> {
+  if (!files.length) return;
+  const history = await gitLog(repoDir, 2);
+  const prevCommit = history.split("\n")[1]?.split(" ")[0];
+  if (prevCommit) await gitRevert(prevCommit, repoDir);
+}
 
-async function main() {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) { console.error("OPENROUTER_API_KEY not set"); process.exit(1); }
+async function finish(
+  incidentId: string,
+  status: "completed" | "failed",
+  error?: string,
+): Promise<void> {
+  await prisma.incident.update({
+    where: { id: incidentId },
+    data: { patchStatus: status === "completed" ? "RESOLVED" : "FAILED" },
+  });
+  log(`${status}${error ? ` reason=${error}` : ""}`, incidentId);
+}
 
-  const store = new VectorStore();
-  await store.init("codebase");
-  const retriever = new Retriever(store);
-  const patcher = new Patcher(apiKey);
-  const processed = await loadProcessedIds();
-  
+// ─── Background initializer ───────────────────────────────────────────────────
+
+async function initializeWithRetry(apiKey: string): Promise<void> {
   while (true) {
     try {
-      const reports = await readReports();
-      for (const report of reports) {
-        if (processed.has(report.incident_id) || report.status === "RESOLVED") {
-          if (report.status === "RESOLVED") processed.add(report.incident_id);
-          continue;
-        }
-        await processIncident(report, retriever, patcher, processed);
-        await saveProcessedIds(processed);
+      log("Connecting to ChromaDB Cloud...");
+      // Probe connectivity by creating a throwaway VectorStore
+      const probe = new VectorStore();
+      await probe.init("_health_probe");
+      patcher = new Patcher(apiKey);
+      ready = true;
+      log("Service fully initialized and ready");
+
+      // Reset stuck incidents from a previous crash
+      const stuck = await prisma.incident.findMany({
+        where: { patchStatus: "PROCESSING" },
+        select: { id: true },
+      });
+      for (const { id } of stuck) {
+        await prisma.incident.update({ where: { id }, data: { patchStatus: "PENDING" } });
       }
-    } catch (e) { log(`poll_err=${e}`); }
-    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      if (stuck.length) log(`Reset ${stuck.length} stuck incidents to PENDING`);
+      break;
+    } catch (err) {
+      log(`Init failed, retrying in 5s: ${err}`);
+      await Bun.sleep(5000);
+    }
   }
+}
+
+// ─── HTTP server ──────────────────────────────────────────────────────────────
+
+async function main() {
+  const apiKey = process.env.CEREBRAS_API_KEY;
+  if (!apiKey) { console.error("CEREBRAS_API_KEY not set"); process.exit(1); }
+
+  // Bind port immediately — Docker healthcheck needs this
+  Bun.serve({
+    port: PORT,
+    routes: {
+      "/health": {
+        GET: () =>
+          ready
+            ? Response.json({ status: "ready", model: MODEL })
+            : new Response("Starting", { status: 503 }),
+      },
+      "/trigger": {
+        POST: async (req: Request) => {
+          if (!ready) return new Response("Service starting, retry shortly", { status: 503 });
+          let body: { incidentId?: string };
+          try { body = (await req.json()) as { incidentId?: string }; }
+          catch { return new Response("Bad JSON", { status: 400 }); }
+          const { incidentId } = body;
+          if (!incidentId) return new Response("incidentId required", { status: 400 });
+          log(`Trigger received`, incidentId);
+          processIncident(incidentId).catch((err) => log(`error=${err}`, incidentId));
+          return Response.json({ queued: true, incidentId });
+        },
+      },
+      "/retry/:id": {
+        POST: async (req: Request) => {
+          const incidentId = (req as Request & { params: Record<string, string> }).params["id"]!;
+          await prisma.incident.update({ where: { id: incidentId }, data: { patchStatus: "PENDING" } });
+          processIncident(incidentId).catch((err) => log(`retry_error=${err}`, incidentId));
+          return Response.json({ retrying: true, incidentId });
+        },
+      },
+    },
+  });
+
+  log(`HTTP server listening on :${PORT}`);
+  initializeWithRetry(apiKey).catch(console.error);
 }
 
 main().catch(console.error);

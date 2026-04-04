@@ -1,4 +1,4 @@
-import { ChromaClient, type Collection } from "chromadb";
+import { CloudClient, type Collection } from "chromadb";
 import { generateEmbeddings } from "./embedding.js";
 
 export interface CodeChunk {
@@ -11,11 +11,15 @@ export interface CodeChunk {
 }
 
 export class VectorStore {
-  private client: ChromaClient;
+  private client: CloudClient;
   private collection: Collection | null = null;
 
   constructor() {
-    this.client = new ChromaClient();
+    this.client = new CloudClient({
+      apiKey: process.env.CHROMA_API_KEY!,
+      tenant: process.env.CHROMA_TENANT!,
+      database: process.env.CHROMA_DATABASE!,
+    });
   }
 
   async init(collectionName: string = "codebase"): Promise<void> {

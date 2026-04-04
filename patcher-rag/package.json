@@ -6,23 +6,25 @@
     "dev": "bun run src/main.ts",
     "start": "bun run src/main.ts",
     "index": "bun run src/indexer.ts",
-    "build": "bun build src/main.ts --outdir ./dist --target node",
+    "db:generate": "bunx prisma generate --schema=./prisma/schema.prisma",
+    "db:migrate": "bunx prisma migrate deploy --schema=./prisma/schema.prisma",
     "test": "bun test"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "prisma": "^6.19.3"
   },
   "peerDependencies": {
     "typescript": "5.4.5"
   },
   "dependencies": {
+    "@ai-sdk/cerebras": "^2.0.42",
     "@chroma-core/default-embed": "^0.1.9",
     "@huggingface/transformers": "^3.2.4",
-    "@openrouter/ai-sdk-provider": "^2.3.3",
+    "@prisma/client": "^6.19.3",
     "ai": "^6.0.141",
     "chromadb": "^3.4.0",
-    "code-chunk": "^0.1.13",
-    "dotenv": "^17.3.1",
+    "@langchain/textsplitters": "^1.0.1",
     "zod": "^4.3.6"
   },
   "overrides": {

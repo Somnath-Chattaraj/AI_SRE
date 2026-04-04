@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/prisma-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  apiKey    String    @unique
+  services  Service[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Service {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  url_server       String            @default("http://example.com")
+  url_codebase     String            @default("http://github.com")
+  userId           String            @db.ObjectId
+  user             User              @relation(fields: [userId], references: [id])
+  incidents        Incident[]
+  monitoringConfig MonitoringConfig?
+  anomalyLogs      AnomalyLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model MonitoringConfig {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  serviceId String   @unique @db.ObjectId
+  service   Service  @relation(fields: [serviceId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Incident {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  type        String   @default("unknown")
+  severity    String   @default("MEDIUM")
+  details     Json?
+  serviceId   String   @db.ObjectId
+  patchStatus String   @default("PENDING") // PENDING | PROCESSING | RESOLVED | FAILED
+  service     Service  @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnomalyLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  metric    String
+  value     Float?
+  raw_data  Json?
+  serviceId String   @db.ObjectId
+  service   Service  @relation(fields: [serviceId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

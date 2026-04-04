@@ -1,4 +1,4 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createCerebras } from "@ai-sdk/cerebras";
 import { generateText } from "ai";
 import type { CodeChunk } from "./storage.js";
 import type { IncidentReport } from "./retriever.js";
@@ -6,7 +6,8 @@ import { log } from "./tools.js";
 
 export interface FilePatch {
   filePath: string;
-  code: string;
+  search: string; // exact code to find in the file
+  replace: string; // replacement code
 }
 
 export interface PatchResult {
@@ -15,72 +16,68 @@ export interface PatchResult {
   error?: string;
 }
 
-export const MODEL = "nvidia/nemotron-3-nano-30b-a3b:free";
+export const MODEL = "qwen-3-235b-a22b-instruct-2507";
 
 function buildPrompt(incident: IncidentReport, chunks: CodeChunk[]): string {
   const context = chunks
     .map((c) => `// ${c.metadata.file}:${c.metadata.line ?? "?"}\n${c.content}`)
-    .join("\n\n");
+    .join("\n\n---\n\n");
 
-  return `You are an expert Node.js debugging assistant. Analyze the code and fix the bug described in the incident.
+  return `You are an expert Node.js SRE assistant. Analyze the buggy code and produce minimal, targeted fixes.
 
 ## Incident
-- Metric: ${incident.metric_analyzed}
-- Service: ${incident.failing_service ?? "unknown"}
+- Type: ${incident.type}
+- Severity: ${incident.severity}
+- Service: ${incident.serviceName ?? "unknown"}
 - Action: ${incident.suggested_action ?? "Fix the bug"}
+- Description: ${incident.description ?? ""}
 
-## Code to Fix
+## Relevant Code
 ${context}
 
-## Requirements
-- Output COMPLETE file content (all exports, imports, etc.)
-- Keep existing function signatures and variable names
-- Fix only the buggy code - minimal changes
-- If memory leak: ensure data is properly released/cleared
-- If CPU blocking: use async patterns (setTimeout, Promises, worker threads)
-- If async issue: use proper async/await or callbacks
-- Do NOT add comments, TODOs, or explanations
+## Instructions
+- Fix ONLY the specific bug causing the incident
+- Keep all existing function signatures, exports, and variable names
+- If memory leak: clear the accumulating data structure
+- If CPU blocking (synchronous loop): replace with async setTimeout/worker
+- If latency: remove artificial delays or use proper async patterns
+- Make the SMALLEST possible change that fixes the issue
+- Do NOT add imports, comments, or refactor unrelated code
 
-## Output Format (STRICT)
-For each file needing changes:
-// File: utils.js
-\`\`\`javascript
-// FULL file content with fix applied
-\`\`\`
+## Output Format
+For each change needed, output an edit block:
 
-If no changes needed:
-// No fix required
+<edit file="relative/path/to/file.js">
+<search>
+exact code to find (must match file content precisely, include enough context to be unique)
+</search>
+<replace>
+replacement code
+</replace>
+</edit>
+
+If multiple files need changes, output multiple edit blocks.
+If no change is needed, output: <no-fix/>
 `;
 }
 
 export function parsePatches(response: string): FilePatch[] {
   const patches: FilePatch[] = [];
-  const sections = response.split(/\/\/\s*File:/);
 
-  for (const section of sections) {
-    if (!section.trim() || section.includes("No fix required")) {
-      continue;
-    }
+  if (response.includes("<no-fix/>")) return patches;
 
-    const lines = section.trim().split("\n");
-    const filePath = lines[0]?.trim() ?? "";
+  const editRegex =
+    /<edit\s+file="([^"]+)">\s*<search>([\s\S]*?)<\/search>\s*<replace>([\s\S]*?)<\/replace>\s*<\/edit>/g;
 
-    let code = lines.slice(1).join("\n").trim();
+  let match: RegExpExecArray | null;
+  while ((match = editRegex.exec(response)) !== null) {
+    const filePath = match[1]!.trim();
+    const search = match[2]!.trim();
+    const replace = match[3]!.trim();
 
-    const codeMatch = code.match(/```(?:javascript)?\n([\s\S]*?)```/) 
-      || code.match(/```javascript([\s\S]*?)```/i)
-      || code.match(/```javascript\n([\s\S]*)```/i)
-      || code.match(/javascript\n([\s\S]*)$/i)
-      || code.match(/^javascript([\s\S]*)$/i)
-      || code.match(/^let[\s\S]*$/);
-
-    if (codeMatch) {
-      code = codeMatch[1]!.trim();
-    }
-
-    if (filePath && code) {
-      log(`Parsed patch for file: ${filePath} with code ${code}`);
-      patches.push({ filePath, code });
+    if (filePath && search) {
+      log(`Parsed patch for: ${filePath}`);
+      patches.push({ filePath, search, replace });
     }
   }
 
@@ -88,10 +85,10 @@ export function parsePatches(response: string): FilePatch[] {
 }
 
 export class Patcher {
-  private provider: ReturnType<typeof createOpenRouter>;
+  private cerebras: ReturnType<typeof createCerebras>;
 
   constructor(apiKey: string) {
-    this.provider = createOpenRouter({ apiKey });
+    this.cerebras = createCerebras({ apiKey });
   }
 
   async generatePatch(
@@ -100,42 +97,26 @@ export class Patcher {
   ): Promise<PatchResult> {
     try {
       const prompt = buildPrompt(incident, chunks);
-
-      log(`Generated prompt for incident ${incident.incident_id}:\n${prompt}`);
+      log(`Sending prompt to ${MODEL} for incident ${incident.incident_id}`);
 
       const startTime = Date.now();
-      const id = setInterval(() => {
-        log(
-          `LLM response pending for ${Math.round((Date.now() - startTime) / 1000)}s...`,
-        );
+      const timer = setInterval(() => {
+        log(`LLM pending ${Math.round((Date.now() - startTime) / 1000)}s...`);
       }, 5000);
 
       const { text } = await generateText({
-        model: this.provider(MODEL),
+        model: this.cerebras(MODEL),
         prompt,
       });
 
-      clearInterval(id);
-      log(
-        `LLM response received in ${Math.round((Date.now() - startTime) / 1000)}s`,
-      );
-      log(
-        `LLM response length for incident ${incident.incident_id}: ${text?.length ?? 0} characters`,
-      );
-      log(`LLM response: ${text}`);
+      clearInterval(timer);
+      log(`LLM responded in ${Math.round((Date.now() - startTime) / 1000)}s`);
+      log(`Raw LLM output:\n${text}`);
 
       const patches = parsePatches(text?.trim() ?? "");
-
-      return {
-        success: true,
-        patches,
-      };
+      return { success: true, patches };
     } catch (error) {
-      return {
-        success: false,
-        patches: [],
-        error: String(error),
-      };
+      return { success: false, patches: [], error: String(error) };
     }
   }
 }

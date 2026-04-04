@@ -5,13 +5,14 @@ export interface RetrievalResult {
   query: string;
 }
 
+// Matches the Prisma Incident model (with service name resolved)
 export interface IncidentReport {
   incident_id: string;
-  metric_analyzed: string;
-  spike_value?: number;
-  failing_service?: string;
+  type: string;         // "downtime" | "latency" | "unknown"
+  severity: string;     // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  description?: string;
   suggested_action?: string;
-  status: string;
+  serviceName?: string;
 }
 
 export class Retriever {
@@ -21,10 +22,12 @@ export class Retriever {
     this.store = store;
   }
 
-  private extractKeywords(incident: IncidentReport): string {
+  private buildQuery(incident: IncidentReport): string {
     const parts = [
-      incident.metric_analyzed,
-      incident.failing_service ?? "",
+      incident.type,
+      incident.severity,
+      incident.serviceName ?? "",
+      incident.description ?? "",
       incident.suggested_action ?? "",
     ];
     return parts.filter(Boolean).join(" ");
@@ -34,7 +37,7 @@ export class Retriever {
     incident: IncidentReport,
     nResults: number = 5,
   ): Promise<RetrievalResult> {
-    const query = this.extractKeywords(incident);
+    const query = this.buildQuery(incident);
     const chunks = await this.store.query(query, nResults);
     return { chunks, query };
   }

@@ -1,6 +1,5 @@
-import { chunk, type ChunkOptions } from "code-chunk";
-import { pipeline, type FeatureExtractionPipeline, env } from "@huggingface/transformers";
-
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 
 let extractor: FeatureExtractionPipeline | null = null;
 
@@ -13,29 +12,31 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
   return extractor;
 }
 
+// RecursiveCharacterTextSplitter with "js" language uses JS-aware separators
+// (function boundaries, class declarations, blank lines) — pure JS, no native deps.
+const splitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
+  chunkSize: 500,
+  chunkOverlap: 50,
+});
+
 export async function generateEmbeddings(
   text: string,
-  fileName: string,
-  options?: ChunkOptions,
+  _fileName: string,
 ): Promise<Array<{ embedding: number[]; content: string }>> {
-  const chunks = await chunk(fileName, text, {
-    language: "javascript",
-    maxChunkSize: 500,
-    ...options,
-  });
+  const chunks = await splitter.splitText(text);
   if (chunks.length === 0) return [];
 
   const embed = await getExtractor();
 
   const results = await Promise.all(
-    chunks.map(async (c) => {
-      const output = await embed(c.text, { pooling: "mean", normalize: true });
-      return Array.from(output.tolist().flat());
+    chunks.map(async (chunk) => {
+      const output = await embed(chunk, { pooling: "mean", normalize: true });
+      return Array.from(output.tolist().flat() as number[]);
     }),
   );
 
-  return chunks.map((c, i) => ({
-    content: c.text,
+  return chunks.map((chunk, i) => ({
+    content: chunk,
     embedding: results[i] ?? [],
   }));
 }
