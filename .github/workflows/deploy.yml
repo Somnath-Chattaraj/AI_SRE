@@ -1,0 +1,156 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_DIR: /home/ubuntu/AI_SRE
+
+jobs:
+  deploy:
+    name: 🚀 Deploy Backend & Frontend to EC2
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. Checkout (only for cache/context) ─────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Deploy via SSH ────────────────────────────────────────────
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT || 22 }}
+          command_timeout: 12m
+          script: |
+            set -euo pipefail
+
+            echo "════════════════════════════════════════════"
+            echo "  🚀 AI SRE Deployment — $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "════════════════════════════════════════════"
+
+            PROJECT_DIR="${{ env.PROJECT_DIR }}"
+
+            # ── Clone if first deploy (HTTP, no SSH needed) ────────────
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              echo "📂 First deploy — cloning repository..."
+              git clone https://github.com/Somnath-Chattaraj/AI_SRE.git "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR"
+
+            echo ""
+            echo "📦 Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo ""
+            echo "📄 Commit: $(git log -1 --oneline)"
+
+            # ── Verify .env exists ────────────────────────────────────
+            if [ ! -f .env ]; then
+              echo "❌ .env file not found at $PROJECT_DIR/.env"
+              exit 1
+            fi
+            echo "✅ .env file found"
+
+            # ── Stop old containers ───────────────────────────────────
+            echo ""
+            echo "🛑 Stopping existing containers..."
+            docker compose down --timeout 30 || true
+
+            # ── Cleanup unused images ─────────────────────────────────
+            echo ""
+            echo "🧹 Cleaning unused Docker images..."
+            docker image prune -f || true
+
+            # ── Build & start (backend + frontend only) ───────────────
+            echo ""
+            echo "🚀 Starting services..."
+            docker compose up -d --build
+
+            # ── Wait for startup ──────────────────────────────────────
+            echo ""
+            echo "⏳ Waiting 30s for services..."
+            sleep 30
+
+            # ── Health checks ─────────────────────────────────────────
+            echo ""
+            echo "🏥 Running health checks..."
+            FAILED=0
+
+            # Backend
+            if curl -sf --max-time 10 http://localhost:3000/health > /dev/null 2>&1; then
+              echo "  ✅ Backend (3000) — healthy"
+            else
+              echo "  ❌ Backend (3000) — unhealthy"
+              FAILED=$((FAILED+1))
+            fi
+
+            # Frontend
+            if curl -sf --max-time 10 -o /dev/null http://localhost:3001; then
+              echo "  ✅ Frontend (3001) — healthy"
+            else
+              echo "  ❌ Frontend (3001) — unhealthy"
+              FAILED=$((FAILED+1))
+            fi
+
+            # ── Container status ──────────────────────────────────────
+            echo ""
+            echo "📋 Container status:"
+            docker compose ps
+
+            # ── Final result ──────────────────────────────────────────
+            echo ""
+            if [ "$FAILED" -gt 0 ]; then
+              echo "════════════════════════════════════════════"
+              echo "  ⚠️ Deployment completed with $FAILED failure(s)"
+              echo "  Run: docker compose logs -f --tail 100"
+              echo "════════════════════════════════════════════"
+              exit 1
+            fi
+
+            PUBLIC_IP=$(curl -sf --max-time 5 ifconfig.me || echo "<EC2_IP>")
+
+            echo "════════════════════════════════════════════"
+            echo "  🎉 Deployment successful!"
+            echo ""
+            echo "  Frontend: http://$PUBLIC_IP:3001"
+            echo "  Backend:  http://$PUBLIC_IP:3000"
+            echo "════════════════════════════════════════════"
+
+      # ── 3. Rollback on failure ───────────────────────────────────────
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            cd ${{ env.PROJECT_DIR }}
+
+            echo "🔄 Rolling back to previous commit..."
+            PREV_COMMIT=$(git log --oneline -2 | tail -1 | awk '{print $1}')
+            git reset --hard "$PREV_COMMIT"
+
+            echo "🔨 Rebuilding previous version..."
+            docker compose down --timeout 10 || true
+            docker compose up -d --build
+
+            echo "⏳ Waiting 30s..."
+            sleep 30
+
+            echo "📋 Container status after rollback:"
+            docker compose ps
+
+            echo "⚠️ Rollback complete"

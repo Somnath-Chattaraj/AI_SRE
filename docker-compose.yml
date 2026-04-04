@@ -78,8 +78,8 @@ services:
       - PROMETHEUS_TARGETS_FILE=/etc/prometheus/targets/targets.json
       - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
       - PATCHER_URL=http://patcher-rag:4000
-      - FRONTEND_URL=http://localhost:3001
-      - BETTER_AUTH_URL=http://localhost:3000
+      - FRONTEND_URL=${NEXT_PUBLIC_URL}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
     ports:
       - "3000:3000"
@@ -129,7 +129,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
     restart: unless-stopped
