@@ -8,6 +8,8 @@ import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
 
+router.post("/incidents", IncidentController.createIncident);
+
 router.use(authMiddleware);
 
 router.post("/services", ServiceController.addService);

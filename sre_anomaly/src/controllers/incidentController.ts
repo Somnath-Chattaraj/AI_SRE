@@ -38,6 +38,35 @@ function mapIncident(inc: any) {
 }
 
 export class IncidentController {
+  static async createIncident(req: Request, res: Response) {
+    try {
+      const { serviceId, title, description, type, severity, details } = req.body;
+
+      if (!serviceId || !title) {
+        res.status(400).json({ error: "serviceId and title are required" });
+        return;
+      }
+
+      const incident = await IncidentService.createIncidentNoAuth({
+        serviceId,
+        title,
+        description,
+        type,
+        severity,
+        details,
+      });
+
+      if (!incident) {
+        res.status(404).json({ error: "Service not found" });
+        return;
+      }
+
+      res.status(201).json({ incident: mapIncident(incident) });
+    } catch {
+      res.status(500).json({ error: "Failed to create incident" });
+    }
+  }
+
   static async listIncidents(req: Request, res: Response) {
     try {
       const user = res.locals.user;

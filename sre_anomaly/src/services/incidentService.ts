@@ -16,4 +16,61 @@ export class IncidentService {
       orderBy: { createdAt: "desc" },
     });
   }
+
+  static async createIncident(
+    userId: string,
+    data: {
+      serviceId: string;
+      title: string;
+      description?: string;
+      type?: string;
+      severity?: string;
+      details?: Record<string, unknown>;
+    }
+  ) {
+    const service = await prisma.service.findFirst({
+      where: { id: data.serviceId, userId },
+    });
+    if (!service) return null;
+
+    return prisma.incident.create({
+      data: {
+        serviceId: data.serviceId,
+        title: data.title,
+        description: data.description,
+        type: data.type ?? "manual",
+        severity: data.severity ?? "MEDIUM",
+        details: (data.details ?? {}) as any,
+        patchStatus: "PENDING",
+      },
+      include: { service: { select: { name: true } } },
+    });
+  }
+
+  static async createIncidentNoAuth(data: {
+    serviceId: string;
+    title: string;
+    description?: string;
+    type?: string;
+    severity?: string;
+    details?: Record<string, unknown>;
+  }) {
+    const service = await prisma.service.findFirst({
+      where: { id: data.serviceId },
+    });
+    if (!service) return null;
+
+    return prisma.incident.create({
+      data: {
+        serviceId: data.serviceId,
+        title: data.title,
+        description: data.description,
+        type: data.type ?? "manual",
+        severity: data.severity ?? "MEDIUM",
+        details: (data.details ?? {}) as any,
+        patchStatus: "PENDING",
+      },
+      include: { service: { select: { name: true } } },
+    });
+  }
 }
