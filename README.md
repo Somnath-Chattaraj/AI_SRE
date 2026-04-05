@@ -1,6 +1,145 @@
 # AI SRE - Autonomous Incident Detection & Auto-Patching System
 
-## Architecture
+## Quick Summary
+
+**Purpose**: Autonomous Site Reliability Engineering platform with AI-powered anomaly detection, root cause analysis, and automatic code patching.
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui |
+| Backend | Express.js 5, Bun, TypeScript |
+| Patcher | Bun, Vercel AI SDK, ChromaDB, Cerebras LLM |
+| Database | MongoDB (Prisma) |
+| Queue | BullMQ + Redis |
+| Monitoring | Prometheus, Blackbox Exporter |
+| Orchestration | SuperPlane (event-driven workflows) |
+
+### Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Frontend   │────▶│   Backend   │────▶│  Prometheus │
+│  (Next.js)  │     │  (Express)  │     │  (Metrics)  │
+└─────────────┘     └──────┬──────┘     └─────────────┘
+                          │
+                    ┌─────▼─────┐
+                    │  BullMQ   │───▶ Anomaly Detection (AI)
+                    │  (Redis)  │
+                    └─────┬─────┘
+                          │
+                    ┌─────▼─────┐
+                    │  Patcher  │───▶ GitHub PRs
+                    │   (RAG)   │
+                    └───────────┘
+                          ▲
+                          │
+                    ┌─────┴─────┐
+                    │ SuperPlane│───▶ Email Notifications
+                    │(Orchestr.)│───▶ GitHub Actions Events
+                    └───────────┘
+```
+
+### Key Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `web/` | Next.js frontend dashboard |
+| `sre_anomaly/` | Express API + anomaly detection worker |
+| `patcher-rag/` | RAG-based auto-patching service |
+| `superplane/` | SuperPlane canvas configurations |
+
+### Main Features
+
+1. **Service Monitoring** - Prometheus probes services every 15s
+2. **Anomaly Detection** - Z-score analysis + LLM validation (70% confidence threshold)
+3. **Auto-Patching** - Clone → Index → Retrieve → Generate → Apply → PR
+4. **Dashboard** - Real-time metrics, AI activity feed, PR tracking
+5. **SuperPlane Integration** - Event-driven orchestration for deployment failures
+
+### Entry Points
+
+| Service | Entry Point | Port |
+|---------|-------------|------|
+| Frontend | `web/app/layout.tsx` | 3001 |
+| Backend API | `sre_anomaly/src/index.ts` | 3000 |
+| Queue Worker | `sre_anomaly/src/worker/worker.ts` | - |
+| Patcher | `patcher-rag/src/main.ts` | 4000 |
+| SuperPlane | `superplane/canvases/` | 3100 |
+
+---
+
+## SuperPlane Integration
+
+SuperPlane provides event-driven workflow orchestration for the AI SRE platform. It monitors GitHub Actions deployment failures and triggers the auto-patching workflow.
+
+### SuperPlane Workflow
+
+```
+GitHub Actions ──▶ Webhook ──▶ Filter (Failed?) ──▶ Extract Info
+                                                      │
+                                                      ▼
+                                              Trigger Patcher
+                                                      │
+                                    ┌─────────────────┴─────────────────┐
+                                    ▼                                   ▼
+                            Email: Patch Started              Email: Patch Failed
+```
+
+### Configuration
+
+1. **Environment Variables** (`.env`):
+   ```bash
+   # SuperPlane
+   SUPERPLANE_URL=http://localhost:3100
+
+   # SMTP for email notifications
+   SMTP_HOST=smtp.example.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your-username
+   SMTP_PASSWORD=your-password
+   SMTP_FROM=sre-alerts@example.com
+   ALERT_EMAIL=team@example.com
+   ```
+
+2. **Canvas Configuration**: `superplane/canvases/deployment-failure-patcher.yaml`
+
+### GitHub Webhook Setup
+
+1. Go to your GitHub repository → Settings → Webhooks
+2. Add webhook with URL: `http://your-superplane-host:3100/webhook/github-deployment`
+3. Content type: `application/json`
+4. Events: Select "Workflow runs" only
+5. Save webhook
+
+### Starting SuperPlane
+
+```bash
+# Start all services including SuperPlane
+docker-compose up -d
+
+# Access SuperPlane UI
+open http://localhost:3100
+
+# Apply canvas configuration (requires SuperPlane CLI)
+superplane canvases create -f superplane/canvases/deployment-failure-patcher.yaml
+```
+
+### Canvas Components
+
+| Node | Component | Purpose |
+|------|-----------|---------|
+| GitHub Deployment Webhook | Webhook | Receives GitHub Actions events |
+| Check Deployment Failed | Filter | Filters for failed deployments |
+| Extract Incident Info | Transform | Extracts relevant event data |
+| Trigger Auto-Patcher | HTTP Request | Calls patcher-rag `/trigger` |
+| Send Patch Started Email | SMTP | Notifies team of patch initiation |
+| Send Patch Failed Email | SMTP | Notifies team of trigger failure |
+
+---
+
+## Detailed Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐

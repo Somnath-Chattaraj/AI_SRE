@@ -121,6 +121,26 @@ services:
       patcher-rag:
         condition: service_healthy
 
+  # ── SuperPlane (Workflow Orchestration) ───────────────────────────────────────
+
+  superplane:
+    image: ghcr.io/superplanehq/superplane-demo:stable
+    container_name: sre-superplane
+    ports:
+      - "3100:3000"
+    volumes:
+      - superplane_data:/app/data
+      - ./superplane/canvases:/app/canvases
+    environment:
+      - SUPERPLANE_URL=${SUPERPLANE_URL:-http://localhost:3100}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   # ── Frontend ──────────────────────────────────────────────────────────────────
 
   frontend:
@@ -140,3 +160,4 @@ services:
 volumes:
   redis_data:
   prometheus_data:
+  superplane_data:
