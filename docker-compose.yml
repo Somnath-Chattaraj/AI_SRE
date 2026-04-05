@@ -124,7 +124,10 @@ services:
   # ── Frontend ──────────────────────────────────────────────────────────────────
 
   frontend:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: sre-frontend
     ports:
       - "3001:3001"
