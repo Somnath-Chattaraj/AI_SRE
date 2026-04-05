@@ -60,7 +60,7 @@ export class IncidentService {
     });
     if (!service) return null;
 
-    return prisma.incident.create({
+    const incident = await prisma.incident.create({
       data: {
         serviceId: data.serviceId,
         title: data.title,
@@ -72,5 +72,14 @@ export class IncidentService {
       },
       include: { service: { select: { name: true } } },
     });
+
+    const patcherUrl = process.env.PATCHER_URL ?? "http://localhost:4000";
+    fetch(`${patcherUrl}/trigger`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ incidentId: incident.id }),
+    }).catch((err) => console.error("[Patcher] Trigger failed:", err));
+
+    return incident;
   }
 }
